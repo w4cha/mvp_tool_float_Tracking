@@ -16,5 +16,5 @@ echo "Running init_db.py..."
 python init_db.py
 
 # Start the application
-echo "Starting Flask Application..."
-exec python app.py
+echo "Starting Gunicorn..."
+exec gunicorn --bind 0.0.0.0:5000 --workers 2 flask_app.app:app

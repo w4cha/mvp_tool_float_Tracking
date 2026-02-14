@@ -8,6 +8,12 @@ load_dotenv()
 # Define the base directory of the project
 # This goes up from 'flask_app/src' to 'flask_app'
 BASE_DIR = Path(__file__).resolve().parent.parent
+# only for deployment
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
+    # Fix: SQLAlchemy requires 'postgresql://' but Fly provides 'postgres://'
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 class Config:
     """Base config."""
@@ -25,15 +31,8 @@ class DevelopmentConfig(Config):
 
 class ProductionConfig(Config):
     DEBUG = False
-    
-    # Database Setup for Docker/Postgres
-    DB_USER = os.environ.get('DB_USER')
-    DB_PASSWORD = os.environ.get('DB_PASSWORD')
-    DB_HOST = os.environ.get('DB_HOST', 'db')
-    DB_PORT = os.environ.get('DB_PORT', '5432')
-    DB_NAME = os.environ.get('DB_NAME')
 
-    SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+    SQLALCHEMY_DATABASE_URI = database_url
 
 config_dict = {
     'development': DevelopmentConfig,

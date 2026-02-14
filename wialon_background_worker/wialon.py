@@ -19,8 +19,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if os.getenv("FLASK_ENV") == "development":
     DB_URL = f"sqlite:///{BASE_DIR / 'local_dev.db'}"
 else:
-    DB_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
-
+    DB_URL = os.environ.get("DATABASE_URL")
+    if DB_URL:
+        # Fix: SQLAlchemy requires 'postgresql://' but Fly provides 'postgres://'
+        if DB_URL.startswith("postgres://"):
+            DB_URL = DB_URL.replace("postgres://", "postgresql://", 1)
 WIALON_URL = "https://hst-api.wialon.com/wialon/ajax.html"
 
 # Setup Requests Session with Retries

@@ -1,0 +1,28 @@
+app = "fleet_trackin_app_mvp"
+primary_region = "scl"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[processes]
+  # Web process runs your entrypoint/gunicorn
+  web = "./flask_app/entrypoint.sh"
+  # Worker process runs your python script directly
+  worker = "python -u wialon_background_worker/wialon.py"
+
+[env]
+  TZ=America/Santiago
+  FLASK_ENV=production
+
+[http_service]
+  internal_port = 5000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["web"] # Only 'web' receives internet traffic
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

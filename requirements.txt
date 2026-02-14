@@ -6,3 +6,7 @@ python-dotenv
 psycopg2-binary
 werkzeug
 email-validator
+requests
+urllib3
+SQLAlchemy
+gunicorn
