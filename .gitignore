@@ -8,3 +8,5 @@
 *.ps1
 # c python cache
 __pycache__
+# docker ignored files
+.dockerignore

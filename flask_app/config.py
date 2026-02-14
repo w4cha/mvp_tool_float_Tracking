@@ -22,7 +22,6 @@ class DevelopmentConfig(Config):
     # This keeps it out of your /src/ folder and away from Docker build context
     sqlite_path = BASE_DIR / "local_dev.db"
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{sqlite_path}"
-    print(f"--- RUNNING IN DEV MODE: Using SQLite at {sqlite_path} ---")
 
 class ProductionConfig(Config):
     DEBUG = False
