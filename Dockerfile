@@ -17,4 +17,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # We run the init script (inside flask_app) then start supervisor
-CMD python -m flask_app/init_db.py && supervisord -c supervisord.conf
+CMD python -m flask_app/init_db && supervisord -c supervisord.conf
