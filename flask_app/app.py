@@ -2,17 +2,17 @@ import os
 from dotenv import load_dotenv
 from flask import request
 from flask import Flask, redirect, render_template, request, send_file, session, flash, abort, url_for, make_response
-from forms import RegistrationForm, LoginForm
+from flask_app.forms import RegistrationForm, LoginForm
 from flask_wtf.csrf import CSRFProtect
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from config import config_dict
-from filters import local_time, init_app
+from flask_app.config import config_dict
+from flask_app.filters import local_time, init_app
 from sqlalchemy import desc
 from sqlalchemy.orm import joinedload
 # bycrypt is similar to werkzeug but slower thus harder to bruteforce
 # from flask_bcrypt import Bcrypt
 from werkzeug.security import check_password_hash, generate_password_hash
-from models import db, User, VehicleTelemetry, SystemConfig, UserRole, Vehicle
+from flask_app.models import db, User, VehicleTelemetry, SystemConfig, UserRole, Vehicle
 
 load_dotenv()
 login_manager = LoginManager()

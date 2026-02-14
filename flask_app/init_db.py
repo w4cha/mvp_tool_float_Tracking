@@ -1,11 +1,11 @@
 import os
-from models import db, User, UserRole, SystemConfig
+from flask_app.models import db, User, UserRole, SystemConfig
 from werkzeug.security import generate_password_hash
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from app import app
+from flask_app.app import app
 
 def init():
     with app.app_context():
