@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Fleet Dashboard{% endblock %}
+
+{% block content %}
+<h2>Panel de Telemetría</h2>
+
+<form hx-get="{{ url_for('search_vehicle') }}" hx-target="#vehicle-table-body"
+    hx-trigger="keyup changed delay:500ms from:input" class="grid">
+    <input type="text" name="search" id="search-input" placeholder="Buscar vehículo por nombre (ej. TRK-01)...">
+</form>
+
+<figure class="table-container">
+    <table role="grid">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Tipo</th>
+                <th>Velocidad</th>
+                <th>Velocidad<br>Maxima Registrada</th>
+                <th>Promedio Velocidad</th>
+                <th>Distancia<br>Acumulada</th>
+                <th>Última Actualización</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="vehicle-table-body" hx-get="{{ url_for('reload_dashboard') }}" hx-include="#search-input"
+            hx-trigger="every 10s">
+            {% include "partials/vehicle_rows.html" %}
+        </tbody>
+    </table>
+</figure>
+
+<dialog id="map-modal">
+    <article style="width: 80%; max-width: 800px;">
+        <header>
+            <a href="#close" aria-label="Close" class="close" onclick="closeModal()"></a>
+            Ubicación del Vehículo: <span id="modal-vehicle-id"></span>
+        </header>
+        <div id="map-container" style="height: 400px; width: 100%; background: #eee;">
+        </div>
+    </article>
+</dialog>
+
+<script>
+    function openMap(name, lat, lon) {
+        const modal = document.getElementById('map-modal');
+        const container = document.getElementById('map-container');
+        document.getElementById('modal-vehicle-id').innerText = name;
+
+        // Google Maps Embed API (Requires your API Key in the URL)
+        // For MVP, you can use a simple iframe link
+        const mapUrl = `https://www.google.com/maps?q=${lat},${lon}&output=embed`;
+        container.innerHTML = `<iframe width="100%" height="100%" frameborder="0" src="${mapUrl}"></iframe>`;
+
+        modal.showModal();
+    }
+    function closeModal() {
+        document.getElementById('map-modal').close();
+    }
+</script>
+{% endblock %}

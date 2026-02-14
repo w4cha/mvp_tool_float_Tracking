@@ -1,0 +1,10 @@
+# --- Environment & Secrets ---
+.env
+# databases
+*.db 
+*.sqlite
+*.sql
+# production test script
+*.ps1
+# c python cache
+__pycache__

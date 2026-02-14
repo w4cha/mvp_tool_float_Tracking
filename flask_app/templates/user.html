@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    Perfil de Usuario
+                </div>
+                <div class="card-body">
+                    <h4 class="card-title">{{ user.user_name }}</h4>
+                    <hr>
+                    <p><strong>Email:</strong> {{ user.user_email }}</p>
+                    <p><strong>Rol:</strong> {{ user.user_role.value | capitalize }}</p>
+                    <p><strong>Estado:</strong>
+                        <span class="badge {{ 'bg-success' if user.active_user else 'bg-danger' }}">
+                            {{ 'Activo' if user.active_user else 'Inactivo' }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {% if current_user.user_role.name == 'ADMIN' %}
+        <div class="col-md-7">
+            <div class="card shadow-sm border-warning mb-4">
+                <div class="card-header bg-warning text-dark">Control de Consumidor (Wialon)</div>
+                <div class="card-body d-flex justify-content-between align-items-center">
+                    <span>Estado actual del Worker: <strong>{{ "EJECUTANDO" if worker_status else "PAUSADO"
+                            }}</strong></span>
+                    <form action="{{ url_for('toggle_worker') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn {{ 'btn-danger' if worker_status else 'btn-success' }}">
+                            {{ "Detener Worker" if worker_status else "Iniciar Worker" }}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-primary">
+                <div class="card-header bg-primary text-white">Gestión de Usuarios</div>
+                <div class="card-body">
+                    <form action="{{ url_for('user', username=current_user.user_name) }}" method="GET" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control" placeholder="Buscar usuario por nombre...">
+                            <button class="btn btn-outline-primary" type="submit">Buscar</button>
+                        </div>
+                    </form>
+
+                    {% if found_users %}
+                    <ul class="list-group">
+                        {% for u in found_users %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ u.user_name }} ({{ u.user_role.value }})
+                            <div>
+                                {% if u.active_user %}
+                                <form action="{{ url_for('delete_user') }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="user_id" value="{{ u.user_id }}">
+                                    <button class="btn btn-sm btn-outline-danger">Desactivar</button>
+                                </form>
+                                {% else %}
+                                <form action="{{ url_for('delete_user') }}" method="POST" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="user_id" value="{{ u.user_id }}">
+                                    <button class="btn btn-sm btn-outline-danger">Activar</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Registro{% endblock %}
+
+{% block content %}
+<article style="max-width: 500px; margin: auto;">
+    <header>
+        <h3>Crear Cuenta</h3>
+    </header>
+    <form method="POST" action="">
+        {{ form.hidden_tag() }} <label for="username">Nombre completo</label>
+        {{ form.username(placeholder="Jorge") }}
+        {% for error in form.username.errors %}<small style="color: red;">{{ error }}</small>{% endfor %}
+
+        <label for="email">Email</label>
+        {{ form.email(placeholder="ejemplo@correo.com") }}
+        {% for error in form.email.errors %}<small style="color: red;">{{ error }}</small>{% endfor %}
+
+        <div class="grid">
+            <div>
+                <label for="password">Contraseña</label>
+                {{ form.password() }}
+                {% for error in form.password.errors %}<small style="color: red;">{{ error }}</small>{% endfor %}
+            </div>
+            <div>
+                <label for="confirm_password">Repetir Contraseña</label>
+                {{ form.confirm_password() }}
+                {% for error in form.confirm_password.errors %}<small style="color: red;">{{ error }}</small>{% endfor
+                %}
+            </div>
+        </div>
+
+        {{ form.submit(class="button") }}
+    </form>
+    <footer>
+        <small>¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí</a></small>
+    </footer>
+</article>
+{% endblock %}

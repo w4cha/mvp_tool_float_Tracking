@@ -1,0 +1,83 @@
+:root {
+    --success: rgba(120, 200, 120);
+    --error: rgba(200, 120, 120);
+    --info: rgba(200, 200, 120);
+    --base-font-size: 2rem;
+    --styled-button: rgb(22, 34, 126);
+}
+
+.container:has(.error, .success, .info) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    font-size: var(--base-font-size);
+    color: rgb(104, 102, 102);
+}
+
+.error {
+    background-color: var(--error);
+}
+
+.success {
+    background-color: var(--success);
+}
+
+.info {
+    background-color: var(--info);
+}
+
+.styled-button {
+    max-height: 60%;
+    text-align: center;
+    border-radius: 5%;
+    background-color: var(--styled-button);
+    padding: 0.2rem;
+    margin: auto;
+    font-size: clamp(0.7rem, 1rem, 2.5rem);
+    color: rgb(162, 161, 161);
+}
+
+/* Container for the scrollable table */
+.table-container {
+    height: 80vh;
+    /* Fixed height: 60% of the screen height */
+    overflow-y: auto;
+    /* Enables vertical scrolling */
+    overflow-x: auto;
+    /* Enables horizontal scrolling for small screens */
+    border: 1px solid var(--muted-border-color);
+    /* Pico.css variable */
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing);
+}
+
+/* Make the header sticky */
+.table-container table {
+    margin: 0;
+    width: 100%;
+}
+
+.table-container thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--background-color);
+    /* Matches theme */
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+    /* Subtle separation */
+}
+
+/* Responsive adjustment for small screens */
+@media (max-width: 768px) {
+    .table-container {
+        height: 50vh;
+        /* Slightly shorter on mobile */
+    }
+
+    /* Optional: make text smaller on mobile to fit more data */
+    table th,
+    table td {
+        font-size: 0.85rem;
+        padding: 0.5rem;
+    }
+}

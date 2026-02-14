@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<article>
+    <header>Iniciar Sesión</header>
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <label for="email">Email</label>
+        {{ form.email(placeholder="ejemplo@correo.com") }}
+        {% for error in form.email.errors %}<small style="color: red;">{{ error }}</small>{% endfor %}
+        <div class="grid">
+            <div>
+                <label for="password">Contraseña</label>
+                {{ form.password() }}
+                {% for error in form.password.errors %}<small style="color: red;">{{ error }}</small>{% endfor %}
+            </div>
+        </div>
+        {{ form.submit(class="button") }}
+    </form>
+</article>
+{% endblock %}
