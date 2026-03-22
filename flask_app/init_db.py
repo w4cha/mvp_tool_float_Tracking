@@ -14,15 +14,18 @@ def init():
 
         # 1. ADMIN USER INITIALIZATION
         admin_email = os.environ.get("USER_EMAIL")
+        user_name = os.environ.get("USER_NAME")
+        temp_pass = os.environ.get("USER_PASSWORD")
+        if not any([admin_email, user_name, temp_pass]):
+            print("No fue posible crear el usuario, uno o más atributos necesarios faltan")
+            return
         print(admin_email)
         exists = User.query.filter_by(user_email=admin_email.upper()).first()
 
         if not exists:
             print(f"Creating admin user: {admin_email}")
-            temp_pass = os.environ.get("USER_PASSWORD")
-            
             new_admin = User(
-                user_name=os.environ.get("USER_NAME"),
+                user_name=user_name,
                 user_email=admin_email.upper(),
                 active_user=True,
                 user_role=UserRole.ADMIN,
@@ -30,7 +33,7 @@ def init():
             )
             db.session.add(new_admin)
             # We can commit both at the end or separately
-            print("Admin created. Temporary password: Fleet2026!")
+            print("Admin created.")
         else:
             print("Admin already exists.")
 

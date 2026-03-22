@@ -4,8 +4,9 @@
 *.db 
 *.sqlite
 *.sql
-# production test script
+# development test script
 *.ps1
+*.bat
 # c python cache
 __pycache__
 # docker ignored files
