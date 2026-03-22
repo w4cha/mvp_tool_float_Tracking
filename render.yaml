@@ -1,69 +1,76 @@
 services:
-  # --- FLASK WEB SERVICE ---
+  # --- 1. THE WEB APP (FLASK) ---
   - type: web
-    name: fleet-web
+    name: fleet-web-app
     runtime: docker
     rootDir: flask_app
     dockerfilePath: Dockerfile
-    dockerContext: .
+    # Context is set to root (..) so Docker can see the shared 'models.py' if needed
+    dockerContext: .. 
+    plan: free
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: fleet-db
+          name: fleet-db-instance
           property: connectionString
       - key: FLASK_ENV
         value: production
       - key: TZ
         value: America/Santiago
+      
+      # Sensitive variables (Render will prompt you for these)
       - key: SECRET_KEY
-        sync: false # Render will ask you for this in the UI
+        sync: false
       - key: USER_EMAIL
-        sync: false # Render will ask you for this in the UI
+        sync: false
       - key: USER_NAME
-        sync: false # Render will ask you for this in the UI
+        sync: false
       - key: USER_PASSWORD
-        sync: false # Render will ask you for this in the UI
+        sync: false
       - key: WIALON_TOKEN
-        sync: false # Render will ask you for this in the UI
+        sync: false
 
-  # --- BACKGROUND WORKER SERVICE ---
+  # --- 2. THE BACKGROUND WORKER ---
   - type: worker
-    name: fleet-worker
+    name: fleet-telemetry-worker
     runtime: docker
     rootDir: wialon_background_worker
     dockerfilePath: Dockerfile
-    dockerContext: .
+    dockerContext: ..
+    plan: starter # Starter is recommended for 24/7 background tasks
     envVars:
       - key: FLASK_ENV
         value: production
       - key: TZ
         value: America/Santiago
       - key: WIALON_TOKEN
-        sync: false # Render will ask you for this in the UI
+        sync: false
+
       # Individual DB Vars (Pulled automatically from the DB below)
       - key: DB_USER
         fromDatabase:
-          name: fleet-db
+          name: fleet-db-instance
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: fleet-db
+          name: fleet-db-instance
           property: password
       - key: DB_HOST
         fromDatabase:
-          name: fleet-db
+          name: fleet-db-instance
           property: host
       - key: DB_NAME
         fromDatabase:
-          name: fleet-db
+          name: fleet-db-instance
           property: database
       - key: DB_PORT
         fromDatabase:
-          name: fleet-db
+          name: fleet-db-instance
           property: port
 
+# --- 3. THE MANAGED DATABASE ---
 databases:
-  - name: fleet-db
+  - name: fleet-db-instance
     databaseName: fleet_db
     user: fleet_admin
     plan: free
