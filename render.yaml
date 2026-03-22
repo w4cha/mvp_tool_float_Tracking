@@ -5,8 +5,7 @@ services:
     runtime: docker
     rootDir: flask_app
     dockerfilePath: Dockerfile
-    # Context is set to root (..) so Docker can see the shared 'models.py' if needed
-    dockerContext: .. 
+    dockerContext: . 
     plan: free
     envVars:
       - key: DATABASE_URL
@@ -36,8 +35,8 @@ services:
     runtime: docker
     rootDir: wialon_background_worker
     dockerfilePath: Dockerfile
-    dockerContext: ..
-    plan: starter # Starter is recommended for 24/7 background tasks
+    dockerContext: .
+    plan: free # Starter is recommended for 24/7 background tasks
     envVars:
       - key: FLASK_ENV
         value: production
