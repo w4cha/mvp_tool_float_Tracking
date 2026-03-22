@@ -19,8 +19,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if os.getenv("FLASK_ENV") == "development":
     DB_URL = f"sqlite:///{BASE_DIR / 'local_dev.db'}"
 else:
-    DB_URL = f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@{os.getenv('DB_HOST')}/{os.getenv('DB_NAME')}"
-
+    DB_URL = (f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}"
+              f"@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT', '5432')}/{os.getenv('DB_NAME')}")
 WIALON_URL = "https://hst-api.wialon.com/wialon/ajax.html"
 
 # Setup Requests Session with Retries

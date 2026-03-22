@@ -1,0 +1,69 @@
+services:
+  # --- FLASK WEB SERVICE ---
+  - type: web
+    name: fleet-web
+    runtime: docker
+    rootDir: flask_app
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fleet-db
+          property: connectionString
+      - key: FLASK_ENV
+        value: production
+      - key: TZ
+        value: America/Santiago
+      - key: SECRET_KEY
+        value: your_secret_here
+      - key: USER_EMAIL
+        value: your_email_here
+      - key: USER_NAME
+        value: your_name_here
+      - key: USER_PASSWORD
+        value: your_password_here
+      - key: WIALON_TOKEN
+        value: your_wialon_token_here
+
+  # --- BACKGROUND WORKER SERVICE ---
+  - type: worker
+    name: fleet-worker
+    runtime: docker
+    rootDir: wialon_background_worker
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: TZ
+        value: America/Santiago
+      - key: WIALON_TOKEN
+        value: your_wialon_token_here
+      # Individual DB Vars for the worker's script logic
+      - key: DB_USER
+        fromDatabase:
+          name: fleet-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: db_password_here
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: fleet-db
+          property: host
+      - key: DB_NAME
+        fromDatabase:
+          name: fleet-db
+          property: database
+      - key: DB_PORT
+        fromDatabase:
+          name: fleet-db
+          property: port
+
+databases:
+  - name: fleet-db
+    databaseName: fleet_db
+    user: fleet_admin
+    plan: free

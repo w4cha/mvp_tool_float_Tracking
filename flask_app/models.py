@@ -30,7 +30,7 @@ class User(db.Model, UserMixin):
         return self.user_id
 
     def __repr__():
-        return f'<Usuario {self.username}>'
+        return f'<Usuario {self.user_name}>'
 
 class Vehicle(db.Model):
 
@@ -68,7 +68,7 @@ class VehicleTelemetry(db.Model):
 
 
     def __repr__(self):
-        return f'<Telmetry for vehicle: {self.vehicle_id.vehicle_id}>'
+        return f'<Telmetry for vehicle: {self.parent_vehicle.vehicle_id}>'
 
 class SystemConfig(db.Model):
     __tablename__ = "shared_state"

@@ -1,58 +1,55 @@
 import os
-from dotenv import load_dotenv
-from flask import request
-from flask import Flask, redirect, render_template, request, send_file, session, flash, abort, url_for, make_response
-from forms import RegistrationForm, LoginForm
+from flask import Flask, redirect, render_template, request, flash, abort, url_for, make_response
 from flask_wtf.csrf import CSRFProtect
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from config import config_dict
-from filters import local_time, init_app
 from sqlalchemy import desc
 from sqlalchemy.orm import joinedload
-# bycrypt is similar to werkzeug but slower thus harder to bruteforce
-# from flask_bcrypt import Bcrypt
 from werkzeug.security import check_password_hash, generate_password_hash
-from models import db, User, VehicleTelemetry, SystemConfig, UserRole, Vehicle
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-load_dotenv()
+# Project imports
+from forms import RegistrationForm, LoginForm
+from config import config_dict
+from filters import local_time, init_app
+from models import db, User, VehicleTelemetry, SystemConfig, Vehicle
+
+# Initialize extensions
 login_manager = LoginManager()
-crsf = CSRFProtect()
+csrf = CSRFProtect()
 
 def create_app():
     app = Flask(__name__)
     
-    # run with $env:FLASK_ENV="development"; python app.py
-    # to load development mode
-    # Determine which config to use from environment
-    env = os.environ.get('FLASK_ENV', 'default')
+    # Determine config from environment (Defaults to production for Render)
+    env = os.environ.get('FLASK_ENV', 'production')
     app.config.from_object(config_dict[env])
-    init_app(app)
     
-    # Initialize extensions
+    # Middleware for Render's Load Balancer (Fixes HTTPS and Redirects)
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+    
+    # Initialize extensions with app context
+    init_app(app)
     db.init_app(app)
     login_manager.init_app(app)
-    crsf.init_app(app)
+    csrf.init_app(app)
     
     return app
 
 app = create_app()
-
-
 login_manager.login_view = "login"
 
 @login_manager.user_loader
 def load_user(user_id):
-    # Flask-Login passes a string ID; we convert to int for the DB lookup
     return User.query.get(int(user_id))
 
-# this needs to change
 @app.after_request
 def add_header(response):
-    # Only disable cache if it's NOT a static file (CSS/JS/Images)
+    # Disable cache for dynamic content, allow for static files
     if not request.path.startswith('/static'):
         response.cache_control.no_store = True
-        response.cache_control.max_age = 0
     return response
+
+# --- ROUTES ---
 
 @app.route("/", methods=["GET"])
 def main():
@@ -61,142 +58,111 @@ def main():
 @app.route("/dashboard", methods=["GET"])
 @login_required
 def dashboard():
-    if request.method == "GET":
-        all_vehicles = VehicleTelemetry.query.join(Vehicle).options(joinedload(VehicleTelemetry.parent_vehicle)).order_by(desc(VehicleTelemetry.speed)).all()
-        return render_template("main.html", vehicles=all_vehicles)
-    return "Metodo invalido", 405
+    all_vehicles = VehicleTelemetry.query.join(Vehicle).options(
+        joinedload(VehicleTelemetry.parent_vehicle)
+    ).order_by(desc(VehicleTelemetry.speed)).all()
+    return render_template("main.html", vehicles=all_vehicles)
 
 @app.route("/reload_table", methods=["GET"])
 @login_required
 def reload_dashboard():
-    if request.method == "GET":
-        if (was_filtered := request.args.get("search")) and was_filtered:
-            all_vehicles = VehicleTelemetry.query.join(Vehicle).filter(Vehicle.vehicle_id.ilike(f"%{was_filtered.upper()}%")).options(joinedload(VehicleTelemetry.parent_vehicle)).order_by(desc(VehicleTelemetry.speed)).all()
-        else:
-            all_vehicles = VehicleTelemetry.query.join(Vehicle).options(joinedload(VehicleTelemetry.parent_vehicle)).order_by(desc(VehicleTelemetry.speed)).all()
-        return render_template("partials/vehicle_rows.html", vehicles=all_vehicles)
-    return "Metodo invalido", 405
-
-# this one is goin to need type_user=get_current_pass.type_user
-# for promoting / soft delete users
+    search = request.args.get("search")
+    query = VehicleTelemetry.query.join(Vehicle)
+    
+    if search:
+        query = query.filter(Vehicle.vehicle_id.ilike(f"%{search.upper()}%"))
+        
+    all_vehicles = query.options(
+        joinedload(VehicleTelemetry.parent_vehicle)
+    ).order_by(desc(VehicleTelemetry.speed)).all()
+    
+    return render_template("partials/vehicle_rows.html", vehicles=all_vehicles)
 
 @app.route("/logout", methods=["POST"])
 def logout():
-    if request.method == "POST":
-        if current_user.is_authenticated:
-            logout_user()
-            flash("Has cerrado sesión correctamente.", "success")
-        response = make_response("", 200)
-        response.headers['HX-Redirect'] = url_for('login')
-        return response
-    return "Metodo invalido", 405
+    if current_user.is_authenticated:
+        logout_user()
+        flash("Has cerrado sesión correctamente.", "success")
+    
+    response = make_response("", 200)
+    response.headers['HX-Redirect'] = url_for('login')
+    return response
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
-    if not current_user.is_authenticated:
-        if request.method == "POST":
-            form = LoginForm()
-            if form.validate_on_submit():
-                email = form.email.data
-                password = form.password.data
-                get_current_pass = User.query.filter_by(user_email=str(email).upper()).first()
-                # active user comes from the mixin
-                if get_current_pass and get_current_pass.active_user:
-                    if check_password_hash(get_current_pass.user_password, password):
-                        # no next injection because no next allowed
-                        # it is a simple mvp after all
-                        login_user(get_current_pass)
-                        flash("sesion iniciada exitosamente", "success")
-                        return redirect(url_for('user', username=get_current_pass.user_name))
-                    flash("contraseña incorrecta", "error")
-                    return redirect(url_for('login'))
-                flash("email incorrecto", "error")
-                return redirect(url_for("login")) 
-            return render_template("regist.html", form=form) 
-        elif request.method == "GET":
-            form = LoginForm()
-            return render_template("login.html", form=form)
-        return "Metodo invalido", 405
-    return redirect(url_for('dashboard'))
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
 
-    
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(user_email=str(form.email.data).upper()).first()
+        if user and user.active_user and check_password_hash(user.user_password, form.password.data):
+            login_user(user)
+            flash("Sesión iniciada exitosamente", "success")
+            return redirect(url_for('user', username=user.user_name))
+        
+        flash("Email o contraseña incorrectos", "error")
+        return redirect(url_for('login'))
+
+    return render_template("login.html", form=form)
+
 @app.route("/regist", methods=["GET", "POST"])
 def regist():
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    if request.method == "POST":
-        form = RegistrationForm()
-        if form.validate_on_submit():
-            hashed_password = generate_password_hash(form.password.data)
-            new_user = User(
-                user_name=str(form.username.data).upper(),
-                user_email=str(form.email.data).upper(),
-                user_password=hashed_password,
-            )
-            
-            db.session.add(new_user)
-            db.session.commit()
-            
-            flash('Tu cuenta ha sido creada. ¡Ya puedes iniciar sesión!', 'success')
-            return redirect(url_for('login'))
-        return render_template("regist.html", form=form)
-    elif request.method == "GET":
-        form = RegistrationForm()
-        return render_template('regist.html', form=form)
-    return "Metodo invalido", 405
+
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        hashed_password = generate_password_hash(form.password.data)
+        new_user = User(
+            user_name=str(form.username.data).upper(),
+            user_email=str(form.email.data).upper(),
+            user_password=hashed_password,
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Tu cuenta ha sido creada. ¡Ya puedes iniciar sesión!', 'success')
+        return redirect(url_for('login'))
+        
+    return render_template("regist.html", form=form)
 
 @app.route("/user/<username>", methods=["GET"])
 @login_required
 def user(username):
-    if request.method == "GET":
-        user_to_view = User.query.filter_by(user_name=username).first_or_404()
-        
-        if current_user.user_role.name != 'ADMIN':
-            if current_user.user_name != username:
-                abort(403)
-            # an non admin user should see its profile
-            return render_template("user.html", user=user_to_view, found_users=[], worker_status=False)
+    user_to_view = User.query.filter_by(user_name=username).first_or_404()
+    
+    if current_user.user_role.name != 'ADMIN' and current_user.user_name != username:
+        abort(403)
 
-        # Search Logic
+    found_users = []
+    if current_user.user_role.name == 'ADMIN':
         search_query = request.args.get('q', '')
-        found_users = []
-        if current_user.user_role.name == 'ADMIN' and search_query:
+        if search_query:
             found_users = User.query.filter(User.user_name.ilike(f"%{search_query}%")).all()
 
-        # Get Worker Status for the Admin Panel
-        config = SystemConfig.query.first()
-        worker_status = config.worker_enabled if config else True
+    config = SystemConfig.query.first()
+    worker_status = config.worker_enabled if config else True
 
-        return render_template("user.html", 
-                            user=user_to_view, 
-                            found_users=found_users, 
-                            worker_status=worker_status)
-    return "Metodo invalido", 405
+    return render_template("user.html", 
+                         user=user_to_view, 
+                         found_users=found_users, 
+                         worker_status=worker_status)
 
-# rank up/down uer for future inplementation
 @app.route("/delete_user", methods=["POST"])
 @login_required
 def delete_user():
     if current_user.user_role.name != 'ADMIN': 
         abort(403)
+    
     user_id = request.form.get('user_id')
-    user = User.query.get(user_id)
-    if user:
-        user.active_user = False if user.active_user else True
+    target_user = User.query.get(user_id)
+    if target_user:
+        target_user.active_user = not target_user.active_user
         db.session.commit()
-        flash(f"Cuenta usuario {user.user_name} {'activada' if user.active_user else 'desactivada'}", "success")
+        status = 'activada' if target_user.active_user else 'desactivada'
+        flash(f"Cuenta usuario {target_user.user_name} {status}", "success")
         
-    return redirect(request.referrer or url_for('user', username=current_user.username))
-
-@app.route("/search_vehicle", methods=["GET"])
-@login_required
-def search_vehicle():
-    if request.method == "GET":
-        search_term = request.args.get("search", "")
-        # Case-insensitive search using SQLAlchemy
-        results = VehicleTelemetry.query.join(Vehicle).filter(Vehicle.vehicle_id.ilike(f"%{search_term}%")).options(joinedload(VehicleTelemetry.parent_vehicle)).order_by(desc(VehicleTelemetry.speed)).all()
-        return render_template("partials/vehicle_rows.html", vehicles=results)
-    return "Metodo no valido", 405
+    return redirect(request.referrer or url_for('user', username=current_user.user_name))
 
 @app.route("/toggle_worker", methods=["POST"])
 @login_required
@@ -217,6 +183,5 @@ def toggle_worker():
     return redirect(request.referrer or url_for('user', username=current_user.user_name))
 
 if __name__ == "__main__":
-    print(f"🚀 Server starting in debug = {app.config.get('DEBUG')}")
-    # CANGE TO GUNICORN FOR FUTURE REALESE
+    # Local dev entry point
     app.run(host='0.0.0.0', port=5000)
