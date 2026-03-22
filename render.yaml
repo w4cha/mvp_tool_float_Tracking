@@ -16,15 +16,15 @@ services:
       - key: TZ
         value: America/Santiago
       - key: SECRET_KEY
-        value: your_secret_here
+        sync: false # Render will ask you for this in the UI
       - key: USER_EMAIL
-        value: your_email_here
+        sync: false # Render will ask you for this in the UI
       - key: USER_NAME
-        value: your_name_here
+        sync: false # Render will ask you for this in the UI
       - key: USER_PASSWORD
-        value: your_password_here
+        sync: false # Render will ask you for this in the UI
       - key: WIALON_TOKEN
-        value: your_wialon_token_here
+        sync: false # Render will ask you for this in the UI
 
   # --- BACKGROUND WORKER SERVICE ---
   - type: worker
@@ -39,15 +39,15 @@ services:
       - key: TZ
         value: America/Santiago
       - key: WIALON_TOKEN
-        value: your_wialon_token_here
-      # Individual DB Vars for the worker's script logic
+        sync: false # Render will ask you for this in the UI
+      # Individual DB Vars (Pulled automatically from the DB below)
       - key: DB_USER
         fromDatabase:
           name: fleet-db
           property: user
       - key: DB_PASSWORD
         fromDatabase:
-          name: db_password_here
+          name: fleet-db
           property: password
       - key: DB_HOST
         fromDatabase:
