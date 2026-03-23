@@ -3,10 +3,10 @@ services:
   - type: web
     name: fleet-web-app
     runtime: docker
-    plan: starter        # Updated to $7/mo plan
-    rootDir: flask_app
+    plan: starter
+    # Tell Render exactly where the folder is
+    dockerContext: flask_app
     dockerfilePath: Dockerfile
-    dockerContext: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -33,10 +33,11 @@ services:
   - type: worker
     name: fleet-telemetry-worker
     runtime: docker
-    plan: starter        # Updated to $7/mo plan
-    rootDir: wialon_background_worker
+    plan: starter
+    # Context MUST be the folder name
+    dockerContext: wialon_background_worker 
+    # Path is just 'Dockerfile' because it's inside that context
     dockerfilePath: Dockerfile
-    dockerContext: .
     envVars:
       - key: FLASK_ENV
         value: production

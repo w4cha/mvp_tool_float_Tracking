@@ -1,12 +1,14 @@
-#!/bin/bash
-set -e
+FROM python:3.11-slim
 
-# Initialize the database schema (tables, etc.)
-echo "Running database initialization..."
-python flask_app/init_db.py
+RUN apt-get update && apt-get install -y libpq-dev gcc tzdata && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-# Start the Flask app with Gunicorn
-# --bind 0.0.0.0:$PORT tells Gunicorn to use Render's dynamic port
-# --chdir flask_app enters your app folder before running
-echo "Starting Web Server..."
-exec gunicorn --bind 0.0.0.0:10000 --chdir ./flask_app app:app
+# This looks for requirements.txt INSIDE the flask_app folder
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# This copies EVERYTHING from flask_app into /app (including init_db.py)
+COPY . .
+
+RUN chmod +x entrypoint.sh
+ENTRYPOINT ["./entrypoint.sh"]
