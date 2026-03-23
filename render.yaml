@@ -34,7 +34,6 @@ services:
     name: fleet-telemetry-worker
     runtime: docker
     plan: starter        # Updated to $7/mo plan
-    region: ohio         # Must match the web app region
     rootDir: wialon_background_worker
     dockerfilePath: Dockerfile
     dockerContext: .
@@ -70,4 +69,3 @@ services:
 
 databases:
   - name: fleet-db-instance
-    plan: starter         # The $7/mo DB plan is 'basic'
