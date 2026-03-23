@@ -4,12 +4,8 @@ services:
     name: fleet-web-app
     runtime: docker
     plan: free
-    # Tells Render to go into the flask_app folder first
-    rootDir: flask_app
-    # Inside flask_app, find the Dockerfile
+    dockerContext: flask_app
     dockerfilePath: Dockerfile
-    # Use the flask_app folder as the build environment
-    dockerContext: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -19,8 +15,7 @@ services:
         value: production
       - key: TZ
         value: America/Santiago
-      
-      # Sensitive variables (Paste these in the Render Dashboard when prompted)
+      # Fill these in the Render Dashboard UI
       - key: SECRET_KEY
         sync: false
       - key: USER_EMAIL
@@ -32,17 +27,13 @@ services:
       - key: WIALON_TOKEN
         sync: false
 
-  # --- 2. THE BACKGROUND WORKER (WIALON POLLING) ---
+  # --- 2. THE BACKGROUND WORKER (WIALON) ---
   - type: worker
     name: fleet-telemetry-worker
     runtime: docker
-    plan: starter # Recommended for 24/7 background tasks
-    # Tells Render to go into the wialon_background_worker folder first
-    rootDir: wialon_background_worker
-    # Inside wialon_background_worker, find the Dockerfile
+    plan: starter
+    dockerContext: wialon_background_worker
     dockerfilePath: Dockerfile
-    # Use the wialon_background_worker folder as the build environment
-    dockerContext: .
     envVars:
       - key: FLASK_ENV
         value: production
@@ -50,8 +41,7 @@ services:
         value: America/Santiago
       - key: WIALON_TOKEN
         sync: false
-
-      # Database connection variables (Automatically mapped from the DB below)
+      # Database connection variables for the worker script
       - key: DB_USER
         fromDatabase:
           name: fleet-db-instance
@@ -73,7 +63,6 @@ services:
           name: fleet-db-instance
           property: port
 
-# --- 3. THE MANAGED POSTGRES DATABASE ---
 databases:
   - name: fleet-db-instance
     databaseName: fleet_db

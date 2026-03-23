@@ -1,24 +1,23 @@
 FROM python:3.11-slim
 
-# Install system dependencies
 RUN apt-get update && apt-get install -y \
     libpq-dev \
     gcc \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
-# Set the timezone explicitly
+# Set Chile Timezone
 ENV TZ=America/Santiago
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /app
 
-# Copy requirements first to leverage Docker layer caching
+# Copy and install local requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
+# Copy all files from the worker folder into /app
 COPY . .
 
-# Use -u (unbuffered) so your logs appear in the Render dashboard in real-time
+# Run unbuffered so logs appear in real-time
 CMD ["python", "-u", "wialon.py"]
