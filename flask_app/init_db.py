@@ -25,7 +25,7 @@ def init():
             print("⚠️ Missing admin credentials in environment variables.")
         else:
             # The event listener in models.py will handle the .upper() automatically
-            exists = User.query.filter_by(user_email=admin_email).first()
+            exists = User.query.filter_by(user_email=str(admin_email).upper()).first()
 
             if not exists:
                 print(f"👤 Creating admin user: {admin_email}")
