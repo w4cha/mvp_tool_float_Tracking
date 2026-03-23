@@ -3,10 +3,13 @@ services:
   - type: web
     name: fleet-web-app
     runtime: docker
-    rootDir: flask_app
-    dockerfilePath: Dockerfile
-    dockerContext: . 
     plan: free
+    # Tells Render to go into the flask_app folder first
+    rootDir: flask_app
+    # Inside flask_app, find the Dockerfile
+    dockerfilePath: Dockerfile
+    # Use the flask_app folder as the build environment
+    dockerContext: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -17,7 +20,7 @@ services:
       - key: TZ
         value: America/Santiago
       
-      # Sensitive variables (Render will prompt you for these)
+      # Sensitive variables (Paste these in the Render Dashboard when prompted)
       - key: SECRET_KEY
         sync: false
       - key: USER_EMAIL
@@ -29,14 +32,17 @@ services:
       - key: WIALON_TOKEN
         sync: false
 
-  # --- 2. THE BACKGROUND WORKER ---
+  # --- 2. THE BACKGROUND WORKER (WIALON POLLING) ---
   - type: worker
     name: fleet-telemetry-worker
     runtime: docker
+    plan: starter # Recommended for 24/7 background tasks
+    # Tells Render to go into the wialon_background_worker folder first
     rootDir: wialon_background_worker
+    # Inside wialon_background_worker, find the Dockerfile
     dockerfilePath: Dockerfile
+    # Use the wialon_background_worker folder as the build environment
     dockerContext: .
-    plan: free # Starter is recommended for 24/7 background tasks
     envVars:
       - key: FLASK_ENV
         value: production
@@ -45,7 +51,7 @@ services:
       - key: WIALON_TOKEN
         sync: false
 
-      # Individual DB Vars (Pulled automatically from the DB below)
+      # Database connection variables (Automatically mapped from the DB below)
       - key: DB_USER
         fromDatabase:
           name: fleet-db-instance
@@ -67,7 +73,7 @@ services:
           name: fleet-db-instance
           property: port
 
-# --- 3. THE MANAGED DATABASE ---
+# --- 3. THE MANAGED POSTGRES DATABASE ---
 databases:
   - name: fleet-db-instance
     databaseName: fleet_db
