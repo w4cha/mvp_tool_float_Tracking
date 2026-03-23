@@ -8,4 +8,4 @@ python init_db.py
 # 2. Start Web Server
 # We remove --chdir because we are already in the correct folder (/app)
 echo "Starting Web Server..."
-exec gunicorn --bind 0.0.0.0:10000 "app:create_app()"
+exec gunicorn --bind 0.0.0.0:10000 "app:app"
