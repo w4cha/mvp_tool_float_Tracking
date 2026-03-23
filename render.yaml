@@ -31,6 +31,10 @@ services:
     dockerContext: .
     dockerfilePath: wialon_background_worker/Dockerfile
     envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+        name: fleet-db-instance
+        property: connectionString
       - key: FLASK_ENV
         value: production
       - key: TZ
