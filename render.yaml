@@ -3,19 +3,21 @@ services:
   - type: web
     name: fleet-web-app
     runtime: docker
-    plan: free
-    dockerContext: flask_app
+    plan: starter        # Updated to $7/mo plan
+    rootDir: flask_app
     dockerfilePath: Dockerfile
+    dockerContext: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: fleet-db-instance
+          name: fleet-db-instance # This links to your existing DB
           property: connectionString
       - key: FLASK_ENV
         value: production
       - key: TZ
         value: America/Santiago
-      # Fill these in the Render Dashboard UI
+      
+      # Sensitive variables (Render will prompt for these)
       - key: SECRET_KEY
         sync: false
       - key: USER_EMAIL
@@ -27,13 +29,15 @@ services:
       - key: WIALON_TOKEN
         sync: false
 
-  # --- 2. THE BACKGROUND WORKER (WIALON) ---
+  # --- 2. THE BACKGROUND WORKER ---
   - type: worker
     name: fleet-telemetry-worker
     runtime: docker
-    plan: starter
-    dockerContext: wialon_background_worker
+    plan: starter        # Updated to $7/mo plan
+    region: ohio         # Must match the web app region
+    rootDir: wialon_background_worker
     dockerfilePath: Dockerfile
+    dockerContext: .
     envVars:
       - key: FLASK_ENV
         value: production
@@ -41,7 +45,8 @@ services:
         value: America/Santiago
       - key: WIALON_TOKEN
         sync: false
-      # Database connection variables for the worker script
+
+      # Individual DB Vars pulled from your existing fleet-db-instance
       - key: DB_USER
         fromDatabase:
           name: fleet-db-instance
@@ -65,6 +70,4 @@ services:
 
 databases:
   - name: fleet-db-instance
-    databaseName: fleet_db
-    user: fleet_admin
-    plan: free
+    plan: basic          # The $7/mo DB plan is 'basic'
