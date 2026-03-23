@@ -33,8 +33,8 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-        name: fleet-db-instance
-        property: connectionString
+          name: fleet-db-instance
+          property: connectionString
       - key: FLASK_ENV
         value: production
       - key: TZ
