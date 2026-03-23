@@ -70,4 +70,4 @@ services:
 
 databases:
   - name: fleet-db-instance
-    plan: basic          # The $7/mo DB plan is 'basic'
+    plan: starter         # The $7/mo DB plan is 'basic'
