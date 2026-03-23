@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if os.getenv("FLASK_ENV") == "development":
     DB_URL = f"sqlite:///{BASE_DIR / 'local_dev.db'}"
 else:
-    DB_URL = os.env.get("DATABASE_URL")
+    DB_URL = os.getenv("DATABASE_URL")
 WIALON_URL = "https://hst-api.wialon.com/wialon/ajax.html"
 
 # Setup Requests Session with Retries
