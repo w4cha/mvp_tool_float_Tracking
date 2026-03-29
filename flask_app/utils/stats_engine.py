@@ -63,10 +63,10 @@ def get_monthly_stats(patente, is_dark_mode=False, period='1h'):
         'lng': h.last_lon
     } for h in history])
     
-    df['ts'] = pd.to_datetime(df['ts'])
-    # 1. Tell Pandas it's UTC, 2. Convert to your local timezone
-    df['ts'] = df['ts'].dt.tz_localize('UTC').dt.tz_convert('America/Santiago')
-    # 3. (Optional) Remove the timezone offset for cleaner Plotly axis labels
+    df['ts'] = pd.to_datetime(df['ts'], utc=True)
+    # set time to app location
+    df['ts'] = df['ts'].dt.tz_convert('America/Santiago')
+    # clean for plotly lavels
     df['ts'] = df['ts'].dt.tz_localize(None)
     # --- Limpieza y Cálculo de Distancia (Haversine con Máscara) ---
     # Eliminamos registros sin coordenadas o con ceros (errores GPS)
