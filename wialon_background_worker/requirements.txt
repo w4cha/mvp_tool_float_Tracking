@@ -1,3 +1,7 @@
+Flask
+Flask-SQLAlchemy
+Flask-Login
+tzdata
 requests
 urllib3
 SQLAlchemy
