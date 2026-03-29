@@ -236,15 +236,41 @@ def process_data(items):
                 current_x, current_y = pos.get('x') or 0, pos.get('y') or 0
                 speed = round(pos.get('s') or 0, 2)
                 
-                # SAFEGUARD: 3.0 km/h threshold filters out GPS 'walking' drift while parked
-                moving = speed > 3.0 
-                engine_on = get_engine_status(item)
-
                 vehicle = db_session.query(Vehicle).filter_by(vehicle_id=patente).first()
                 if not vehicle:
                     vehicle = Vehicle(vehicle_id=patente)
                     db_session.add(vehicle)
                     db_session.flush()
+
+                last_log = db_session.query(VehicleTelemetryHistory).filter_by(vehicle_id=patente).order_by(VehicleTelemetryHistory.timestamp.desc()).first()
+
+                dist_moved = 0.0
+                passed_time = 999999 
+                believable_desplacement = True
+                
+                if last_log:
+                    dist_moved = calc_app_distance(last_log.last_lat, last_log.last_lon, current_y, current_x)
+                    now_utc = datetime.now(timezone.utc)
+                    last_log_ts = last_log.timestamp.replace(tzinfo=timezone.utc)
+                    passed_time = (now_utc - last_log_ts).total_seconds()
+                    
+                    # Filtro de Outliers: ¿Es físicamente posible este movimiento?
+                    implied_speed_kmh = (dist_moved / (passed_time / 3600)) if passed_time > 0 else 999
+                    believable_desplacement = implied_speed_kmh < ASSUME_MAX_SPEED
+                    
+                    if not believable_desplacement:
+                        print(f"[!] Salto Implausible para {patente}: {dist_moved:.2f}km en {passed_time}s. Ignorando distancia.")
+                        dist_moved = 0.0
+
+                # --- LÓGICA DE MOVIMIENTO CORREGIDA ---
+                engine_on = get_engine_status(item)
+                has_physical_move = dist_moved > 0.050 # 50 metros mínimo
+                
+                # 'moving' es verdadero solo si hay velocidad reportada Y el GPS confirma el movimiento
+                if last_log:
+                    moving = (speed > 3.0) and has_physical_move
+                else:
+                    moving = speed > 3.0
 
                 t_data = vehicle.telemetry_data
                 if not t_data:
@@ -253,38 +279,23 @@ def process_data(items):
                     db_session.add(t_data)
                     db_session.flush()
 
-                # DECISION: ANCHOR TO HISTORY. 
-                # Decision made to fetch last SAVED record to compare time/distance.
-                # This prevents logging based on ephemeral live updates.
-                last_log = db_session.query(VehicleTelemetryHistory).filter_by(vehicle_id=patente).order_by(VehicleTelemetryHistory.timestamp.desc()).first()
-
-                dist_moved = 0.0
-                passed_time = 999999 
-                believable_desplacement = True
-                if last_log:
-                    dist_moved = calc_app_distance(last_log.last_lat, last_log.last_lon, current_y, current_x)
-                    now_utc = datetime.now(timezone.utc)
-                    last_log_ts = last_log.timestamp.replace(tzinfo=timezone.utc)
-                    passed_time = (now_utc - last_log_ts).total_seconds()
-                    implied_speed_kmh = (dist_moved / (passed_time / 3600)) if passed_time > 0 else 999
-                    believable_desplacement = implied_speed_kmh < ASSUME_MAX_SPEED
-                    if not believable_desplacement:
-                        print(f"[!] Salto Implausible para {patente}: {dist_moved:.2f}km en {passed_time}s ({implied_speed_kmh:.1f} km/h). Ignorando distancia.")
-                        dist_moved = 0.0
-            
-                # DECISION: TRIGGER LOGIC (STRICT)
-                # 1. 50m filter + Engine ON (Solves GPS bounce in Quilpué while parked)
-                significant_move = (dist_moved > 0.050) and engine_on
-                # 2. Log if ignition or moving status actually flips
+                # --- TRIGGER LOGIC ---
+                significant_move = has_physical_move and engine_on
                 engine_changed = engine_on != t_data.engine_state
                 state_changed = moving != t_data.is_moving
-                # 3. Dynamic Heartbeat: 15m if running, 4h if off.
-                heartbeat_limit = 900 if engine_on else 14400
+                
+                # Heartbeat dinámico para evitar saturación de la DB
+                if engine_on:
+                    # 15 min si se mueve, 60 min si está en ralentí
+                    heartbeat_limit = 900 if moving else 3600
+                else:
+                    heartbeat_limit = 14400 # 4 horas si está apagado
+                
                 stale_data = passed_time > heartbeat_limit
-
                 should_log_history = (significant_move or engine_changed or state_changed or stale_data) and believable_desplacement
 
-                # DECISION: Route creation triggered on 'Dead Stop' (Ignition OFF + Speed 0)
+                # --- GENERACIÓN DE RUTA ---
+                # Se dispara cuando detectamos que el camión se detuvo completamente
                 just_stopped = (not moving and not engine_on) and (t_data.is_moving or t_data.engine_state)
                 if just_stopped:
                     try:
@@ -292,13 +303,13 @@ def process_data(items):
                     except Exception as e:
                         print(f"[!] Error creando ruta para {patente}: {e}")
 
-                # UPDATE LIVE STATE (Always happens every 30s)
+                # --- UPDATE LIVE STATE & HISTORY ---
                 t_data.speed, t_data.is_moving, t_data.engine_state = speed, moving, engine_on
                 t_data.last_lat, t_data.last_lon, t_data.raw_data = current_y, current_x, item
+                
                 if believable_desplacement:
                     t_data.accumulated_distance += dist_moved
 
-                # SAVE HISTORY (Only happens on Triggers)
                 if should_log_history:
                     db_session.add(VehicleTelemetryHistory(
                         vehicle_id=patente, speed=speed, last_lat=current_y, last_lon=current_x,
