@@ -26,6 +26,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DB_URL = f"sqlite:///{BASE_DIR / 'local_dev.db'}" if os.getenv("FLASK_ENV") == "development" else os.getenv("DATABASE_URL")
 WIALON_URL = "https://hst-api.wialon.com/wialon/ajax.html"
 BACKUP_AFTER_DAYS = 120
+ASSUME_MAX_SPEED = 150
 session_http = requests.Session()
 retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
 session_http.mount('https://', HTTPAdapter(max_retries=retries))
@@ -145,8 +146,8 @@ def create_vehicle_route(db_session, patente):
             if start_ts <= curr.timestamp <= end_ts:
                 time_diff = (curr.timestamp - prev.timestamp).total_seconds()
                 
-                # SAFEGUARD: Ignore gaps > 20 mins to avoid 'teleportation' distance spikes
-                if 0 < time_diff <= 1200: 
+                # SAFEGUARD: Ignore gaps > 30 mins to avoid 'teleportation' distance spikes
+                if 0 < time_diff <= 1800:
                     total_dist += calc_app_distance(prev.last_lat, prev.last_lon, curr.last_lat, curr.last_lon)
                     # idependtly of the previous current state the vehicle moved
                     if prev.engine_state or prev.is_moving:
@@ -259,13 +260,18 @@ def process_data(items):
 
                 dist_moved = 0.0
                 passed_time = 999999 
-                
+                believable_desplacement = True
                 if last_log:
                     dist_moved = calc_app_distance(last_log.last_lat, last_log.last_lon, current_y, current_x)
                     now_utc = datetime.now(timezone.utc)
                     last_log_ts = last_log.timestamp.replace(tzinfo=timezone.utc)
                     passed_time = (now_utc - last_log_ts).total_seconds()
-
+                    implied_speed_kmh = (dist_moved / (passed_time / 3600)) if passed_time > 0 else 999
+                    believable_desplacement = implied_speed_kmh < ASSUME_MAX_SPEED
+                    if not believable_desplacement:
+                        print(f"[!] Salto Implausible para {patente}: {dist_moved:.2f}km en {passed_time}s ({implied_speed_kmh:.1f} km/h). Ignorando distancia.")
+                        dist_moved = 0.0
+            
                 # DECISION: TRIGGER LOGIC (STRICT)
                 # 1. 50m filter + Engine ON (Solves GPS bounce in Quilpué while parked)
                 significant_move = (dist_moved > 0.050) and engine_on
@@ -276,7 +282,7 @@ def process_data(items):
                 heartbeat_limit = 900 if engine_on else 14400
                 stale_data = passed_time > heartbeat_limit
 
-                should_log_history = significant_move or engine_changed or state_changed or stale_data
+                should_log_history = (significant_move or engine_changed or state_changed or stale_data) and believable_desplacement
 
                 # DECISION: Route creation triggered on 'Dead Stop' (Ignition OFF + Speed 0)
                 just_stopped = (not moving and not engine_on) and (t_data.is_moving or t_data.engine_state)
@@ -289,7 +295,8 @@ def process_data(items):
                 # UPDATE LIVE STATE (Always happens every 30s)
                 t_data.speed, t_data.is_moving, t_data.engine_state = speed, moving, engine_on
                 t_data.last_lat, t_data.last_lon, t_data.raw_data = current_y, current_x, item
-                t_data.accumulated_distance += dist_moved
+                if believable_desplacement:
+                    t_data.accumulated_distance += dist_moved
 
                 # SAVE HISTORY (Only happens on Triggers)
                 if should_log_history:

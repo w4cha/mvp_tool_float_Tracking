@@ -35,6 +35,7 @@
     --success: #4caf50;
     --error: #ef5350;
     --info: #fbc02d;
+    --state-offline: #555f64;
     --styled-button-bg: #3949ab;
     --surface-bg: #ffffff;
 }
@@ -198,18 +199,22 @@ html {
 
 .stat-card.info {
     border-top: 0.3em solid var(--state-offline);
+    color: var(--state-offline);
 }
 
 .stat-card.stopped {
     border-top: 0.3em solid var(--state-not-moving);
+    color: var(--state-not-moving);
 }
 
 .stat-card.moving {
     border-top: 0.3em solid var(--success);
+    color: var(--success);
 }
 
 .stat-card.engine-off {
     border-top: 0.3em solid var(--error);
+    color: var(--error);
 }
 
 /* --- Global Map Section --- */
