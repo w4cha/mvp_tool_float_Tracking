@@ -1,0 +1,7 @@
+.env
+*.ps1
+*.pyc
+*.bat
+*.db
+*.db-shm
+*.db-wal

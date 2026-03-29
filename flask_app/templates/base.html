@@ -6,8 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wialon MVP - {% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@googlemaps/polyline-codec@1.0.28/dist/index.min.js"></script>
+
 </head>
 
 <body>
@@ -16,13 +18,26 @@
             <li><strong>FleetMonitor</strong></li>
         </ul>
         <ul>
+            <li>
+                <button id="theme-toggle" class="outline contrast" aria-label="Cambiar modo de color"
+                    style="border: none; padding: 0.5em; margin-bottom: 0;">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M6.23465 2.45667C6.05848 3.08307 5.97039 3.73883 5.97039 4.40439C5.97039 8.3977 9.21985 11.6472 13.2132 11.6472C13.8787 11.6472 14.5345 11.5591 15.1609 11.3829C14.143 13.8885 11.6765 15.66 8.80877 15.66C5.03079 15.66 1.95751 12.5868 1.95751 8.80877C1.95751 5.94103 3.72905 3.47457 6.23465 2.45667ZM8.80877 0C3.94437 0 0 3.94437 0 8.80877C0 13.6732 3.94437 17.6175 8.80877 17.6175C13.6732 17.6175 17.6175 13.6732 17.6175 8.80877C17.6175 8.35855 17.5784 7.90832 17.5197 7.47767C16.5605 8.81856 14.9945 9.68965 13.2132 9.68965C10.2965 9.68965 7.9279 7.32107 7.9279 4.40439C7.9279 2.63284 8.79899 1.05705 10.1399 0.0978752C9.70922 0.03915 9.259 0 8.80877 0Z"
+                            fill="currentColor" />
+                    </svg>
+                </button>
+            </li>
+
             {% if current_user.is_authenticated %}
             <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
             <li><a href="{{ url_for('user', username=current_user.user_name) }}">Profile</a></li>
-            <button class="styled-button" hx-post="{{ url_for('logout') }}"
-                hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}' style="cursor: pointer;">
-                Logout
-            </button>
+            <li>
+                <button class="styled-button" hx-post="{{ url_for('logout') }}"
+                    hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}' style="cursor: pointer;">
+                    Logout
+                </button>
+            </li>
             {% else %}
             <li><a href="{{ url_for('login') }}">Login</a></li>
             <li><a href="{{ url_for('regist') }}">Register</a></li>
@@ -33,16 +48,22 @@
     <main class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
-        {% for category, message in messages %}
-        <article style="padding: 1rem; margin-bottom: 1rem;" class="{{ category }}">
-            {{ message }}
-        </article>
-        {% endfor %}
+        <div class="container:has(.error, .success, .info) flash-message">
+            {% for category, message in messages %}
+            <article class="{{ category }}" style="margin-bottom: 0.5em;">
+                {{ message }}
+            </article>
+            {% endfor %}
+        </div>
         {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
     </main>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script src="https://unpkg.com/@googlemaps/polyline-codec"></script>
+
 </body>
 
 </html>

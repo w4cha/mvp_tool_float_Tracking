@@ -1,0 +1,30 @@
+<article id="vehicle-status-card">
+    <header>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Estado Actual</span>
+            <button class="styled-button" style="font-size: 0.7rem; min-height: 2em; padding: 2px 8px;"
+                onclick="document.getElementById('edit-vehicle-modal').open = true">
+                Editar
+            </button>
+        </div>
+    </header>
+    <div class="info-content">
+        <p><strong>Patente:</strong> {{ vehicle.vehicle_id }}</p>
+        <p><strong>Conductor:</strong>
+            {{ vehicle.current_driver.name if vehicle.current_driver else "Sin asignar" }}
+        </p>
+        <p><strong>Estado:</strong>
+            {% set s = vehicle.vehicle_state %}
+            <span
+                class="badge {% if s.name == 'ACTIVO' %}badge-success{% elif s.name == 'MANTENIMIENTO' %}badge-idle{% elif s.name == 'INACTIVO' %}badge-off{% else %}badge-error{% endif %}">
+                {{ s.value | capitalize }}
+            </span>
+        </p>
+        <hr>
+        <p><strong>Velocidad:</strong> {{ vehicle.telemetry_data.speed if vehicle.telemetry_data else 0 }} km/h</p>
+        <p><strong>Odómetro:</strong> {{ "%.2f"|format(vehicle.telemetry_data.accumulated_distance) if
+            vehicle.telemetry_data else 0 }} km</p>
+        <p><strong>Última conexión:</strong> {{ vehicle.telemetry_data.last_update | local_time if
+            vehicle.telemetry_data else 'N/A' }}</p>
+    </div>
+</article>

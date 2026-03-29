@@ -3,3 +3,4 @@ urllib3
 SQLAlchemy
 python-dotenv
 psycopg2-binary
+polyline

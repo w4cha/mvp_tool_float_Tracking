@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+{% block title %}Detalle {{ vehicle.vehicle_id }}{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.plot.ly/plotly-3.4.0.min.js" charset="utf-8"></script>
+<script id="history-data" type="application/json">
+    [
+        {% for h in history %}
+        {
+            "lat": {{ h.last_lat }},
+            "lon": {{ h.last_lon }},
+            "ts": "{{ h.timestamp }}"
+        }{% if not loop.last %},{% endif %}
+        {% endfor %}
+    ]
+</script>
+
+<div class="detail-header">
+    <h2>Vehículo: {{ vehicle.vehicle_id }}</h2>
+</div>
+
+<nav class="tab-nav">
+    <ul>
+        <li><a href="#" class="tab-link active" data-target="tab-general">General</a></li>
+        <li><a href="#" class="tab-link" data-target="tab-anotaciones">Anotaciones</a></li>
+        <li><a href="#" class="tab-link" data-target="tab-stats">Estadísticas</a></li>
+    </ul>
+</nav>
+
+<div id="tab-content-container">
+    <section id="tab-general" class="tab-pane active">
+        <div class="grid">
+            <article class="map-card-detail">
+                <header>Trayecto últimas 3 horas</header>
+                <div id="detail-map" style="height: 500px; border-radius: 8px;"></div>
+            </article>
+            {% include "partials/vehicle_info_card.html" %}
+        </div>
+    </section>
+
+    <section id="tab-anotaciones" class="tab-pane">
+        <div class="grid">
+            <article>
+                <header>Nueva Anotación</header>
+                <form hx-post="{{ url_for('detalle_vehiculo', patente=vehicle.vehicle_id) }}"
+                    hx-target="#notes-list-container" hx-on::after-request="if(event.detail.successful) this.reset();">
+                    {{ form.csrf_token }}
+                    <label>Asunto</label>
+                    {{ form.subject() }}
+                    <label>Comentario</label>
+                    {{ form.comment(rows=4) }}
+                    <button type="submit" class="styled-button">Guardar Nota</button>
+                </form>
+            </article>
+            <article class="notes-list" id="notes-list-container">
+                {% include "partials/notes_list.html" %}
+            </article>
+        </div>
+    </section>
+
+    <section id="tab-stats" class="tab-pane">
+        <div id="stats-interface-wrapper">
+            {% include "partials/stats_render.html" %}
+        </div>
+    </section>
+</div>
+
+<dialog id="edit-vehicle-modal">
+    <article style="max-width: 500px;">
+        <header>
+            <a href="#close" class="close" onclick="this.closest('dialog').open = false"></a>
+            Configuración: {{ vehicle.vehicle_id }}
+        </header>
+        <div id="edit-vehicle-modal-content">
+            {% include "partials/modal_edit_form.html" %}
+        </div>
+    </article>
+</dialog>
+
+<script>
+    // --- GLOBAL DATA ---
+    window.currentGraphs = {{ graphs | tojson | safe if graphs else '{}' }};
+    window.allRoutes = {{ routes | tojson | safe if routes else '[]' }};
+    window.rMap = null;
+    window.polylineLayer = null;
+    window.startMarker = null;
+    window.endMarker = null;
+    window.activeRouteIndex = 0;
+    window.renderActivePlot = function renderActivePlot(selected) {
+        const chartDiv = document.getElementById('active-chart');
+        if (!chartDiv || !window.currentGraphs[selected]) return;
+        let plotData = window.currentGraphs[selected];
+        if (typeof plotData === 'string') plotData = JSON.parse(plotData);
+        Plotly.react(chartDiv, plotData.data, plotData.layout, { responsive: true, displayModeBar: false, locale: 'es' });
+
+        document.querySelectorAll('.info-text').forEach(t => t.style.display = 'none');
+        const infoEl = document.getElementById('info-' + selected);
+        if (infoEl) infoEl.style.display = 'block';
+    }
+
+    function initRouteMap() {
+        const container = document.getElementById('route-map');
+        if (!container) return;
+
+        // Check if the container already has a Leaflet instance attached to it
+        // If it does, we need to completely wipe it to avoid "Map container is already initialized"
+        if (window.rMap) {
+            window.rMap.remove(); // This is the nuclear option to reset the instance
+            window.rMap = null;
+        }
+
+        // Initialize the map fresh
+        window.rMap = L.map('route-map').setView(window.allRoutes[0].start_coords, 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(window.rMap);
+
+        // Select the first route once the map is ready
+        selectRoute(0);
+    }
+
+    function selectRoute(idx) {
+        const data = window.allRoutes[idx];
+        if (!data) return;
+
+        window.activeRouteIndex = idx;
+
+        // 1. UI Selection highlight
+        document.querySelectorAll('.route-row').forEach(r => r.classList.remove('selected'));
+        const row = document.getElementById(`row-${idx}`);
+        if (row) row.classList.add('selected');
+
+        // 2. Clear previous layers (Polyline AND Markers)
+        if (window.polylineLayer) window.rMap.removeLayer(window.polylineLayer);
+        if (window.startMarker) window.rMap.removeLayer(window.startMarker);
+        if (window.endMarker) window.rMap.removeLayer(window.endMarker);
+
+        try {
+            // 3. Render Polyline
+            const decodedPath = polyline.decode(data.polyline);
+            window.polylineLayer = L.polyline(decodedPath, {
+                color: '#e74c3c',
+                weight: 5,
+                opacity: 0.8
+            }).addTo(window.rMap);
+
+            // 4. Add Start Pin (Green)
+            window.startMarker = L.circleMarker(data.start_coords, {
+                radius: 7,
+                fillColor: "#2ecc71",
+                color: "#fff",
+                weight: 2,
+                fillOpacity: 1
+            }).addTo(window.rMap).bindPopup("Inicio del trayecto");
+
+            // 5. Add End Pin (Red)
+            window.endMarker = L.circleMarker(data.end_coords, {
+                radius: 7,
+                fillColor: "#e74c3c",
+                color: "#fff",
+                weight: 2,
+                fillOpacity: 1
+            }).addTo(window.rMap).bindPopup("Fin del trayecto");
+
+            // 6. Adjust View
+            window.rMap.fitBounds(window.polylineLayer.getBounds(), { padding: [40, 40] });
+
+        } catch (e) {
+            console.error("Error rendering route markers:", e);
+        }
+    };
+
+    function toggleInfo() {
+        const box = document.getElementById('graph-info-box');
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // --- TAB LOGIC (RESTORED) ---
+    document.querySelectorAll('.tab-link').forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            document.querySelectorAll('.tab-link, .tab-pane').forEach(el => el.classList.remove('active'));
+            link.classList.add('active');
+            const target = link.getAttribute('data-target');
+            document.getElementById(target).classList.add('active');
+
+            if (target === 'tab-general' && typeof detailMap !== 'undefined') {
+                detailMap.invalidateSize();
+            }
+            if (target === 'tab-stats') {
+                const activeChart = document.getElementById('active-chart');
+                if (activeChart && activeChart.layout) Plotly.Plots.resize(activeChart);
+                if (window.rMap) {
+                    setTimeout(() => {
+                        window.rMap.invalidateSize();
+                        if (window.polylineLayer) window.rMap.fitBounds(window.polylineLayer.getBounds());
+                    }, 150);
+                }
+            }
+        });
+    });
+
+    // --- GENERAL MAP INIT ---
+    let detailMap;
+    const historyData = JSON.parse(document.getElementById('history-data').textContent);
+    function initDetailMap() {
+        if (!historyData || historyData.length === 0) return;
+        const lastPos = [historyData[historyData.length - 1].lat, historyData[historyData.length - 1].lon];
+        detailMap = L.map('detail-map').setView(lastPos, 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(detailMap);
+        const pathCoords = historyData.map(p => [p.lat, p.lon]);
+        const route = L.polyline(pathCoords, { color: '#3498db', weight: 5, opacity: 0.7 }).addTo(detailMap);
+        L.circleMarker(lastPos, { radius: 8, fillColor: "#2ecc71", color: "#fff", fillOpacity: 1 }).addTo(detailMap);
+        detailMap.fitBounds(route.getBounds());
+    }
+
+    document.addEventListener('DOMContentLoaded', initDetailMap);
+</script>
+{% endblock %}

@@ -12,6 +12,8 @@ services:
         fromDatabase:
           name: fleet-db-instance
           property: connectionString
+      - key: PYTHONPATH 
+        value: /app
       - key: FLASK_ENV
         value: production
       - key: TZ
@@ -35,6 +37,8 @@ services:
         fromDatabase:
           name: fleet-db-instance
           property: connectionString
+      - key: PYTHONPATH 
+        value: /app
       - key: FLASK_ENV
         value: production
       - key: TZ

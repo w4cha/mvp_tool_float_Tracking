@@ -1,81 +1,190 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-5">
-            <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white">
-                    Perfil de Usuario
-                </div>
-                <div class="card-body">
-                    <h4 class="card-title">{{ user.user_name }}</h4>
-                    <hr>
-                    <p><strong>Email:</strong> {{ user.user_email }}</p>
-                    <p><strong>Rol:</strong> {{ user.user_role.value | capitalize }}</p>
-                    <p><strong>Estado:</strong>
-                        <span class="badge {{ 'bg-success' if user.active_user else 'bg-danger' }}">
-                            {{ 'Activo' if user.active_user else 'Inactivo' }}
-                        </span>
+<main class="container">
+    <header>
+        <hgroup>
+            <h1>Panel de Usuario</h1>
+            <p>Gestiona tu información y configuraciones del sistema</p>
+        </hgroup>
+    </header>
+
+    <nav class="tab-navigation">
+        <ul>
+            <li>
+                <a href="#" class="tab-link active" onclick="openTab(event, 'profile-tab')">
+                    Mi Perfil
+                </a>
+            </li>
+            {% if current_user.user_role.name == 'ADMIN' %}
+            <li>
+                <a href="#" class="tab-link" onclick="openTab(event, 'admin-tab')">
+                    Administración Sistema
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <section>
+        <div id="profile-tab" class="tab-pane active">
+            <div class="grid">
+                <article class="stat-card">
+                    <header>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4 style="margin: 0;">{{ user.user_name }}</h4>
+                            <span class="badge {{ 'badge-success' if user.active_user else 'badge-error' }}">
+                                {{ 'Cuenta Activa' if user.active_user else 'Cuenta Inactiva' }}
+                            </span>
+                        </div>
+                    </header>
+                    <p><strong>Email:</strong><br>{{ user.user_email }}</p>
+                    <p><strong>Rol del Sistema:</strong><br>
+                        <mark class="tag-other">{{ user.user_role.value | upper }}</mark>
                     </p>
-                </div>
+                </article>
+
+                <article class="stat-card" style="border-top: 3px solid var(--info);">
+                    <header>
+                        <h5 style="margin: 0;">Seguridad de la Cuenta</h5>
+                        <small>Cambiar contraseña actual</small>
+                    </header>
+
+                    <form action="{{ url_for('change_password') }}" method="POST">
+                        {{ password_form.csrf_token }}
+
+                        <label for="new_password">{{ password_form.new_password.label }}</label>
+                        <div class="password-wrapper">
+                            {{ password_form.new_password(placeholder="Mínimo 6 caracteres") }}
+                            <span class="toggle-password" onclick="togglePassword('new_password', this)">
+                                <svg id="eye-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <path d="M1 12C1 12 5 20 12 20C19 20 23 12 23 12" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"></circle>
+                                </svg>
+                                <svg id="eye-closed" display="none" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M2 2L22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                    <path
+                                        d="M6.71277 6.7226C3.66479 8.79527 2 12 2 12C2 12 5.63636 19 12 19C14.0503 19 15.8174 18.2734 17.2711 17.2884M11 5.05822C11.3254 5.02013 11.6588 5 12 5C18.3636 5 22 12 22 12C22 12 21.3082 13.3317 20 14.8335"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                    <path
+                                        d="M14 14.2362C13.4692 14.7112 12.7684 15.0001 12 15.0001C10.3431 15.0001 9 13.657 9 12.0001C9 11.1764 9.33193 10.4303 9.86932 9.88818"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                </svg>
+                            </span>
+                        </div>
+
+                        <label for="confirm_password">{{ password_form.confirm_password.label }}</label>
+                        <div class="password-wrapper">
+                            {{ password_form.confirm_password(placeholder="Repita su nueva contraseña") }}
+                            <span class="toggle-password" onclick="togglePassword('confirm_password', this)">
+                                <svg id="eye-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <path d="M1 12C1 12 5 20 12 20C19 20 23 12 23 12" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+                                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"></circle>
+                                </svg>
+                                <svg id="eye-closed" display="none" viewBox="0 0 24 24" fill="none"
+                                    xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M2 2L22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                    <path
+                                        d="M6.71277 6.7226C3.66479 8.79527 2 12 2 12C2 12 5.63636 19 12 19C14.0503 19 15.8174 18.2734 17.2711 17.2884M11 5.05822C11.3254 5.02013 11.6588 5 12 5C18.3636 5 22 12 22 12C22 12 21.3082 13.3317 20 14.8335"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                    <path
+                                        d="M14 14.2362C13.4692 14.7112 12.7684 15.0001 12 15.0001C10.3431 15.0001 9 13.657 9 12.0001C9 11.1764 9.33193 10.4303 9.86932 9.88818"
+                                        stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round"></path>
+                                </svg>
+                            </span>
+                        </div>
+
+                        {{ password_form.submit(class="styled-button", style="width: 100%; margin-top: 1rem;") }}
+                    </form>
+                </article>
             </div>
         </div>
 
         {% if current_user.user_role.name == 'ADMIN' %}
-        <div class="col-md-7">
-            <div class="card shadow-sm border-warning mb-4">
-                <div class="card-header bg-warning text-dark">Control de Consumidor (Wialon)</div>
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <span>Estado actual del Worker: <strong>{{ "EJECUTANDO" if worker_status else "PAUSADO"
-                            }}</strong></span>
-                    <form action="{{ url_for('toggle_worker') }}" method="POST">
+        <div id="admin-tab" class="tab-pane">
+
+            <article class="stat-card" style="border-top: 3px solid var(--info);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h5 style="margin: 0;">Consumidor de Telemetría (Wialon)</h5>
+                        <small>Estado actual:
+                            <strong style="color: {{ 'var(--success)' if worker_status else 'var(--error)' }}">
+                                {{ "EJECUTANDO" if worker_status else "PAUSADO" }}
+                            </strong>
+                        </small>
+                    </div>
+                    <form action="{{ url_for('toggle_worker') }}" method="POST" style="margin: 0;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button class="btn {{ 'btn-danger' if worker_status else 'btn-success' }}">
-                            {{ "Detener Worker" if worker_status else "Iniciar Worker" }}
+                        <button type="submit" class="styled-button"
+                            style="background-color: {{ 'var(--error)' if worker_status else 'var(--success)' }};">
+                            {{ "Detener Script" if worker_status else "Iniciar Script" }}
                         </button>
                     </form>
                 </div>
-            </div>
+            </article>
 
-            <div class="card shadow-sm border-primary">
-                <div class="card-header bg-primary text-white">Gestión de Usuarios</div>
-                <div class="card-body">
-                    <form action="{{ url_for('user', username=current_user.user_name) }}" method="GET" class="mb-3">
-                        <div class="input-group">
-                            <input type="text" name="q" class="form-control" placeholder="Buscar usuario por nombre...">
-                            <button class="btn btn-outline-primary" type="submit">Buscar</button>
-                        </div>
-                    </form>
+            <div class="table-container">
+                <header
+                    style="padding: 1rem; background: var(--surface-bg); border-bottom: 1px solid var(--muted-border-color);">
+                    <div style="margin: 0; display: flex; gap: 1rem;">
+                        <input type="text" name="q" placeholder="Escribe para buscar usuario..."
+                            style="margin: 0; flex-grow: 1;"
+                            hx-get="{{ url_for('user', username=current_user.user_name) }}"
+                            hx-trigger="keyup changed delay:300ms, search" hx-target="#user-table-body"
+                            hx-indicator=".htmx-indicator">
+                    </div>
+                </header>
 
-                    {% if found_users %}
-                    <ul class="list-group">
-                        {% for u in found_users %}
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{ u.user_name }} ({{ u.user_role.value }})
-                            <div>
-                                {% if u.active_user %}
-                                <form action="{{ url_for('delete_user') }}" method="POST" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="user_id" value="{{ u.user_id }}">
-                                    <button class="btn btn-sm btn-outline-danger">Desactivar</button>
-                                </form>
-                                {% else %}
-                                <form action="{{ url_for('delete_user') }}" method="POST" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <input type="hidden" name="user_id" value="{{ u.user_id }}">
-                                    <button class="btn btn-sm btn-outline-danger">Activar</button>
-                                </form>
-                                {% endif %}
-                            </div>
-                        </li>
-                        {% endfor %}
-                    </ul>
-                    {% endif %}
-                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nombre de Usuario</th>
+                            <th>Email</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-table-body">
+                        {% include "partials/user_table_row.html" %}
+                    </tbody>
+                </table>
+
             </div>
         </div>
         {% endif %}
-    </div>
-</div>
+    </section>
+</main>
+
+<script>
+    function openTab(evt, tabName) {
+        evt.preventDefault();
+        // Ocultar todos los panes
+        document.querySelectorAll('.tab-pane').forEach(pane => {
+            pane.classList.remove('active');
+        });
+        // Desactivar todos los links
+        document.querySelectorAll('.tab-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        // Mostrar el actual
+        document.getElementById(tabName).classList.add('active');
+        evt.currentTarget.classList.add('active');
+    }
+</script>
 {% endblock %}

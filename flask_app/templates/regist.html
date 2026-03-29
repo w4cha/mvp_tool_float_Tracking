@@ -2,37 +2,103 @@
 {% block title %}Registro{% endblock %}
 
 {% block content %}
-<article style="max-width: 500px; margin: auto;">
-    <header>
-        <h3>Crear Cuenta</h3>
-    </header>
-    <form method="POST" action="">
-        {{ form.hidden_tag() }} <label for="username">Nombre completo</label>
-        {{ form.username(placeholder="Jorge") }}
-        {% for error in form.username.errors %}<small style="color: red;">{{ error }}</small>{% endfor %}
+<div class="auth-container" style="max-width: 550px; margin: 2rem auto;">
+    <article class="card">
+        <header>
+            <h3 style="margin: 0;">Crear Cuenta</h3>
+            <small style="color: var(--text-muted);">Únete al sistema de gestión</small>
+        </header>
 
-        <label for="email">Email</label>
-        {{ form.email(placeholder="ejemplo@correo.com") }}
-        {% for error in form.email.errors %}<small style="color: red;">{{ error }}</small>{% endfor %}
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
 
-        <div class="grid">
-            <div>
-                <label for="password">Contraseña</label>
-                {{ form.password() }}
-                {% for error in form.password.errors %}<small style="color: red;">{{ error }}</small>{% endfor %}
+            <label for="username">Nombre Completo</label>
+            {{ form.username(placeholder="Ej: Jorge Valdivia") }}
+            {% for error in form.username.errors %}
+            <small style="color: var(--error); display: block; margin-bottom: 1rem;">{{ error }}</small>
+            {% endfor %}
+
+            <label for="email">Correo Electrónico</label>
+            {{ form.email(placeholder="ejemplo@correo.com") }}
+            {% for error in form.email.errors %}
+            <small style="color: var(--error); display: block; margin-bottom: 1rem;">{{ error }}</small>
+            {% endfor %}
+
+            <div class="grid">
+                <div>
+                    <label for="password">Contraseña</label>
+                    <div class="password-wrapper">
+                        {{ form.password(placeholder="••••••••", id="reg-password") }}
+                        <span class="toggle-password" onclick="togglePassword('reg-password', this)">
+                            <svg id="eye-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M1 12C1 12 5 20 12 20C19 20 23 12 23 12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"></path>
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"></circle>
+                            </svg>
+                            <svg id="eye-closed" display="none" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2 2L22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"></path>
+                                <path
+                                    d="M6.71277 6.7226C3.66479 8.79527 2 12 2 12C2 12 5.63636 19 12 19C14.0503 19 15.8174 18.2734 17.2711 17.2884M11 5.05822C11.3254 5.02013 11.6588 5 12 5C18.3636 5 22 12 22 12C22 12 21.3082 13.3317 20 14.8335"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"></path>
+                                <path
+                                    d="M14 14.2362C13.4692 14.7112 12.7684 15.0001 12 15.0001C10.3431 15.0001 9 13.657 9 12.0001C9 11.1764 9.33193 10.4303 9.86932 9.88818"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"></path>
+                            </svg>
+                        </span>
+                    </div>
+                    {% for error in form.password.errors %}
+                    <small style="color: var(--error);">{{ error }}</small>
+                    {% endfor %}
+                </div>
+                <div>
+                    <label for="confirm_password">Repetir Contraseña</label>
+                    <div class="password-wrapper">
+                        {{ form.confirm_password(placeholder="••••••••", id="confirm-password") }}
+                        <span class="toggle-password" onclick="togglePassword('confirm-password', this)">
+                            <svg id="eye-open" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"></path>
+                                <path d="M1 12C1 12 5 20 12 20C19 20 23 12 23 12" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"></path>
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round"></circle>
+                            </svg>
+                            <svg id="eye-closed" display="none" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2 2L22 22" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"></path>
+                                <path
+                                    d="M6.71277 6.7226C3.66479 8.79527 2 12 2 12C2 12 5.63636 19 12 19C14.0503 19 15.8174 18.2734 17.2711 17.2884M11 5.05822C11.3254 5.02013 11.6588 5 12 5C18.3636 5 22 12 22 12C22 12 21.3082 13.3317 20 14.8335"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"></path>
+                                <path
+                                    d="M14 14.2362C13.4692 14.7112 12.7684 15.0001 12 15.0001C10.3431 15.0001 9 13.657 9 12.0001C9 11.1764 9.33193 10.4303 9.86932 9.88818"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"></path>
+                            </svg>
+                        </span>
+                    </div>
+                    {% for error in form.confirm_password.errors %}
+                    <small style="color: var(--error);">{{ error }}</small>
+                    {% endfor %}
+                </div>
             </div>
-            <div>
-                <label for="confirm_password">Repetir Contraseña</label>
-                {{ form.confirm_password() }}
-                {% for error in form.confirm_password.errors %}<small style="color: red;">{{ error }}</small>{% endfor
-                %}
-            </div>
-        </div>
 
-        {{ form.submit(class="button") }}
-    </form>
-    <footer>
-        <small>¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí</a></small>
-    </footer>
-</article>
+            <div style="margin-top: 1.5rem;">
+                {{ form.submit(class="styled-button", style="width: 100%;") }}
+            </div>
+        </form>
+
+        <footer>
+            <small>¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí</a></small>
+        </footer>
+    </article>
+</div>
 {% endblock %}

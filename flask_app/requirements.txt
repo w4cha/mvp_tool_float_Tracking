@@ -8,3 +8,6 @@ werkzeug
 email-validator
 tzdata
 gunicorn
+pandas
+plotly
+polyline

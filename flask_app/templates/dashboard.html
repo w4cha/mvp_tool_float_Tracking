@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Fleet Dashboard{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+<div class="dashboard-header">
+    <h2>Panel de Control de Flota</h2>
+</div>
+
+<div id="stats-container"></div>
+
+<hr>
+
+<div id="global-map"
+    style="height: 450px; margin: 2em 0; border-radius: 8px; border: 1px solid var(--muted-border-color); z-index: 1;">
+</div>
+
+<hr>
+
+<div class="grid" style="margin-bottom: 1rem;">
+    <section>
+        <label for="state-filter">Filtrar por Estado</label>
+        <select id="state-filter" name="state" hx-get="{{ url_for('reload_dashboard') }}"
+            hx-target="#table-container-wrapper" hx-include="#search-input" hx-trigger="change">
+            <option value="ALL">Todos los estados</option>
+            {% for state in all_states %}
+            <option value="{{ state.name }}">{{ state.value | capitalize }}</option>
+            {% endfor %}
+        </select>
+    </section>
+
+    <section>
+        <label for="search-input">Buscar por Patente</label>
+        <input type="text" name="search" id="search-input" placeholder="Escriba una patente..."
+            hx-get="{{ url_for('reload_dashboard') }}" hx-target="#table-container-wrapper" hx-include="#state-filter"
+            hx-trigger="keyup changed delay:500ms">
+    </section>
+</div>
+
+<div id="table-container-wrapper" hx-get="{{ url_for('reload_dashboard') }}" hx-trigger="load, every 10s"
+    hx-target="#table-container-wrapper" hx-include="#state-filter, #search-input">
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+    let map;
+    let markerClusterGroup;
+    let markers = {};
+
+    function initMap() {
+        if (!map) {
+            map = L.map('global-map').setView([-33.4499, -70.6526], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            markerClusterGroup = L.markerClusterGroup({
+                showCoverageOnHover: false,
+                maxClusterRadius: 50,
+                animate: true
+            });
+            map.addLayer(markerClusterGroup);
+        }
+    }
+
+    function updateMapMarkers() {
+        const vehicleElements = document.querySelectorAll('.vehicle-marker-data');
+        markerClusterGroup.clearLayers();
+        markers = {};
+
+        vehicleElements.forEach(el => {
+            const id = el.dataset.id;
+            const lat = parseFloat(el.dataset.lat);
+            const lon = parseFloat(el.dataset.lon);
+
+            if (!lat || !lon || lat === 0) return;
+
+            const isMoving = el.dataset.moving === 'True' || el.dataset.moving === 'true';
+            const label = el.dataset.label;
+            const speed = el.dataset.speed;
+            const color = isMoving ? '#2ecc71' : '#e74c3c';
+
+            const m = L.circleMarker([lat, lon], {
+                radius: 7,
+                fillColor: color,
+                color: "#fff",
+                weight: 2,
+                fillOpacity: 0.9,
+                interactive: true
+            }).bindPopup(`<b>${label}</b><br>Velocidad: ${speed} km/h`);
+
+            markers[id] = m;
+            markerClusterGroup.addLayer(m);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initMap();
+        updateMapMarkers();
+    });
+
+    // Mantenemos tu listener original: funciona porque conservamos el ID "table-container-wrapper"
+    document.body.addEventListener('htmx:afterSwap', (evt) => {
+        if (evt.detail.target.id === "table-container-wrapper") {
+            updateMapMarkers();
+        }
+    });
+</script>
+{% endblock %}

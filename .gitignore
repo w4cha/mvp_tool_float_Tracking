@@ -1,7 +1,9 @@
 # --- Environment & Secrets ---
 .env
 # databases
-*.db 
+*.db
+*.db-shm
+*.db-wal 
 *.sqlite
 *.sql
 # development test script
@@ -9,5 +11,3 @@
 *.bat
 # c python cache
 __pycache__
-# docker ignored files
-.dockerignore

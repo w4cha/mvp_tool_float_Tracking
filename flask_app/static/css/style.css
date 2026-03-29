@@ -1,17 +1,120 @@
 :root {
-    --success: rgba(120, 200, 120);
-    --error: rgba(200, 120, 120);
-    --info: rgba(200, 200, 120);
-    --base-font-size: 2rem;
-    --styled-button: rgb(22, 34, 126);
+    /* Semantic Colors */
+    --success: #2e7d32;
+    --error: #c62828;
+    --info: #f9a825;
+
+    /* Theme Variables */
+    --styled-button-bg: #1a237e;
+    --surface-bg: #11191f;
+
+    /* Responsive Scaling Base */
+    --border-radius-em: 0.375em;
+    --spacing-em: 1em;
+
+    --tag-incident: var(--error);
+    --tag-speed: #ef6c00;
+    /* Orange */
+    --tag-maintenance: #0277bd;
+    /* Blue */
+    --tag-delay: #6a1b9b;
+    /* Purple */
+    --tag-behavior: var(--info);
+    --tag-other: #546e7a;
+
+    --state-active: var(--success);
+    --state-maintenance: #0277bd;
+    --state-offline: #555f64;
+    --state-not-moving: var(--info);
+    --state-inactive: var(--error);
+
 }
 
+/* Light Mode Overrides */
+[data-theme="light"] {
+    --success: #4caf50;
+    --error: #ef5350;
+    --info: #fbc02d;
+    --styled-button-bg: #3949ab;
+    --surface-bg: #ffffff;
+}
+
+/* --- Global Transitions --- */
+html {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* --- Alerts & Flash Messages --- */
 .container:has(.error, .success, .info) {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    font-size: var(--base-font-size);
-    color: rgb(104, 102, 102);
+    gap: 0.5em;
+    margin-bottom: 1.5em;
+    animation: slideIn 0.5s ease-out forwards;
+    transition: opacity 0.6s ease, transform 0.6s ease, margin 0.6s ease;
+}
+
+.flash-message {
+    animation: slideIn 0.5s ease-out forwards;
+    transition: opacity 0.6s ease, transform 0.6s ease, margin 0.6s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* Clase que aplicaremos por JS para desvanecer */
+.flash-fade-out {
+    animation: fading-out 0.7s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: none;
+}
+
+@keyframes fading-out {
+    0% {
+        opacity: 1;
+        transform: scale(1);
+        max-height: 200px;
+        /* Un valor mayor al alto esperado del flash */
+        margin-bottom: 1rem;
+        padding: 1rem;
+    }
+
+    50% {
+        opacity: 0;
+        transform: scale(0.95) translateY(-10px);
+        max-height: 200px;
+        /* Mantenemos el alto mientras desvanece */
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+        max-height: 0;
+        margin-bottom: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-width: 0;
+        overflow: hidden;
+        /* Evita que el texto se asome mientras colapsa */
+    }
+}
+
+.error,
+.success,
+.info {
+    padding: 0.8em 1.2em;
+    border-radius: var(--border-radius-em);
+    color: #fff;
+    font-weight: 500;
+    font-size: 0.95rem;
 }
 
 .error {
@@ -26,58 +129,528 @@
     background-color: var(--info);
 }
 
-.styled-button {
-    max-height: 60%;
-    text-align: center;
-    border-radius: 5%;
-    background-color: var(--styled-button);
-    padding: 0.2rem;
-    margin: auto;
-    font-size: clamp(0.7rem, 1rem, 2.5rem);
-    color: rgb(162, 161, 161);
-}
 
-/* Container for the scrollable table */
-.table-container {
-    height: 80vh;
-    /* Fixed height: 60% of the screen height */
-    overflow-y: auto;
-    /* Enables vertical scrolling */
-    overflow-x: auto;
-    /* Enables horizontal scrolling for small screens */
-    border: 1px solid var(--muted-border-color);
-    /* Pico.css variable */
-    border-radius: var(--border-radius);
-    margin-bottom: var(--spacing);
-}
 
-/* Make the header sticky */
-.table-container table {
-    margin: 0;
+.password-wrapper {
+    position: relative;
+    display: flex;
+    /* Esto ayuda a alinear verticalmente */
+    align-items: center;
     width: 100%;
+    /* Para que ocupe todo el ancho del formulario */
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 3rem;
+    /* Espacio extra a la derecha para que el texto no tape el ojo */
+    margin-bottom: 0 !important;
+    /* Pico.css añade margen abajo, aquí lo quitamos */
+}
+
+.toggle-password {
+    position: absolute;
+    right: 1rem;
+    /* Lo alejamos un poco del borde derecho */
+    top: 50%;
+    transform: translateY(-50%);
+    /* Centrado vertical perfecto */
+    cursor: pointer;
+    display: flex;
+    z-index: 10;
+}
+
+.toggle-password svg {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.toggle-password:hover svg {
+    opacity: 1;
+    color: var(--primary);
+}
+
+/* --- Stats Grid (Dashboard Top) --- */
+.stats-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+    margin-bottom: 1.5em;
+}
+
+.stat-card {
+    flex: 1 1 12em;
+    padding: 1em !important;
+    background-color: var(--surface-bg);
+    border: 1px solid var(--muted-border-color);
+    border-radius: var(--border-radius-em);
+    text-align: center;
+    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.05);
+}
+
+.stat-card h2 {
+    margin: 0;
+    font-size: 2em;
+}
+
+.stat-card.info {
+    border-top: 0.3em solid var(--state-offline);
+}
+
+.stat-card.stopped {
+    border-top: 0.3em solid var(--state-not-moving);
+}
+
+.stat-card.moving {
+    border-top: 0.3em solid var(--success);
+}
+
+.stat-card.engine-off {
+    border-top: 0.3em solid var(--error);
+}
+
+/* --- Global Map Section --- */
+.global-map-section {
+    width: 100%;
+    margin: 0 auto 2em auto;
+}
+
+.map-wrapper {
+    height: 35rem;
+    /* Dynamic height that respects zoom */
+    background: var(--muted-border-color);
+    border-radius: var(--border-radius-em);
+    overflow: hidden;
+    border: 1px solid var(--muted-border-color);
+}
+
+.map-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+}
+
+/* --- Styled Button (Zoom-Safe) --- */
+.styled-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--styled-button-bg);
+    color: #fff !important;
+    padding: 0.4em 0.8em;
+    border-radius: var(--border-radius-em);
+    font-size: 1em;
+    min-height: 2.5em;
+    border: none;
+    cursor: pointer;
+    transition: filter 0.2s ease;
+    text-decoration: none;
+}
+
+.styled-button:hover {
+    filter: brightness(1.2);
+}
+
+/* --- Table & Data Display --- */
+.table-container {
+    max-height: 40rem;
+    height: auto;
+    overflow: auto;
+    border: 0.0625em solid var(--muted-border-color);
+    border-radius: var(--border-radius-em);
+    background-color: var(--surface-bg);
+    box-shadow: 0 0.2em 0.5em rgba(0, 0, 0, 0.1);
+}
+
+.table-container table {
+    width: 100%;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 .table-container thead th {
     position: sticky;
     top: 0;
-    z-index: 10;
-    background-color: var(--background-color);
-    /* Matches theme */
-    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
-    /* Subtle separation */
+    z-index: 20;
+    background-color: var(--surface-bg);
+    padding: 0.75em;
+    border-bottom: 0.125em solid var(--muted-border-color);
+    text-align: left;
+    white-space: nowrap;
 }
 
-/* Responsive adjustment for small screens */
-@media (max-width: 768px) {
-    .table-container {
-        height: 50vh;
-        /* Slightly shorter on mobile */
+table td {
+    padding: 0.75em;
+    border-bottom: 0.05em solid var(--muted-border-color);
+    vertical-align: middle;
+}
+
+/* --- Badges & Highlighting --- */
+.badge {
+    padding: 0.2em 0.6em;
+    border-radius: 1em;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: white;
+}
+
+.badge-success {
+    background: var(--state-active);
+}
+
+.badge-idle {
+    background: var(--state-maintenance);
+}
+
+.badge-not-moving {
+    background-color: var(--state-not-moving);
+}
+
+.badge-off {
+    background: var(--state-offline);
+}
+
+.badge-error {
+    background: var(--state-inactive);
+}
+
+.row-moving {
+    background-color: rgba(46, 125, 50, 0.03);
+}
+
+.row-stopped {
+    background-color: rgba(198, 40, 40, 0.03);
+}
+
+.high-speed {
+    color: var(--error);
+    font-weight: bold;
+}
+
+.detail-layout {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: 1.5em;
+    align-items: start;
+}
+
+.map-card {
+    padding: 0 !important;
+    overflow: hidden;
+    border: 1px solid var(--muted-border-color);
+}
+
+.map-card header {
+    margin-bottom: 0;
+    padding: 0.8em;
+}
+
+.carousel-container {
+    position: relative;
+    width: 100%;
+}
+
+.carousel-viewport {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    /* Ocultar scrollbar en algunos navegadores */
+    scrollbar-width: none;
+}
+
+.carousel-viewport::-webkit-scrollbar {
+    display: none;
+}
+
+.carousel-slide {
+    flex: 0 0 100%;
+    /* Cada slide ocupa el 100% del ancho del modal */
+    scroll-snap-align: center;
+    min-height: 400px;
+    background: var(--card-background-color);
+    border: 1px solid var(--muted-border-color);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.carousel-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.carousel-controls button {
+    padding: 0.2rem 1.5rem;
+    width: auto;
+}
+
+.chart-box {
+    width: 100%;
+    height: 350px;
+}
+
+/* Corregir botones de zoom de Leaflet */
+.leaflet-control-zoom a {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none !important;
+    color: #444 !important;
+    /* Color del + y - */
+    background-color: #fff !important;
+    border-bottom: 1px solid #ccc !important;
+}
+
+/* Evitar que Pico.css o estilos globales afecten el tamaño */
+.leaflet-container a.leaflet-control-zoom-in,
+.leaflet-container a.leaflet-control-zoom-out {
+    height: 30px !important;
+    width: 30px !important;
+    line-height: 30px !important;
+}
+
+.leaflet-control-zoom-out {
+    border-bottom: none !important;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+.tab-link.active {
+    font-weight: bold;
+    border-bottom: 2px solid var(--primary);
+}
+
+.note-item {
+    margin-bottom: 1rem;
+}
+
+.note-item mark.tag-incident {
+    background-color: var(--tag-incident);
+    color: white;
+}
+
+.note-item mark.tag-speed {
+    background-color: var(--tag-speed);
+    color: white;
+}
+
+.note-item mark.tag-maintenance {
+    background-color: var(--tag-maintenance);
+    color: white;
+}
+
+.note-item mark.tag-delay {
+    background-color: var(--tag-delay);
+    color: white;
+}
+
+.note-item mark.tag-behavior {
+    background-color: var(--tag-behavior);
+    color: black;
+}
+
+.note-item mark.tag-other {
+    background-color: var(--tag-other);
+    color: white;
+}
+
+.note-filter-wrapper {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.note-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.note-meta mark {
+    padding: 0.2rem 0.5rem;
+    border-radius: var(--border-radius-em);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: bold;
+}
+
+/* Fix for Plotly tooltips and backgrounds in Dark Mode */
+.chart-container {
+    background: transparent;
+    border-radius: var(--border-radius-em);
+    padding: 10px;
+}
+
+[data-theme="dark"] .js-plotly-plot .plotly .cursor-crosshair {
+    cursor: crosshair;
+}
+
+#graph-info-box {
+    border-left: 4px solid var(--primary);
+    background-color: var(--card-background-color);
+}
+
+.stats-header-inline label {
+    font-size: 0.8rem;
+    margin-bottom: 0.2rem;
+    color: var(--text-muted);
+}
+
+.tab-navigation {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--muted-border-color);
+}
+
+.tab-navigation ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    gap: 2rem;
+}
+
+.tab-link {
+    text-decoration: none;
+    color: var(--text-muted);
+    padding-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.tab-link.active {
+    color: var(--primary);
+    border-bottom: 3px solid var(--primary);
+    font-weight: bold;
+}
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+.routes-container {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    min-height: 500px;
+}
+
+.route-map-section {
+    flex: 1.5;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--muted-border-color);
+}
+
+.route-list-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.route-table-wrapper {
+    max-height: 250px;
+    /* Half of map height approx */
+    overflow-y: auto;
+    border: 1px solid var(--muted-border-color);
+    border-radius: 4px;
+}
+
+.route-row {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.route-row:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.route-row.selected {
+    background: var(--primary) !important;
+    color: white !important;
+}
+
+@media (max-width: 64em) {
+    .routes-container {
+        flex-direction: column;
     }
 
-    /* Optional: make text smaller on mobile to fit more data */
-    table th,
-    table td {
-        font-size: 0.85rem;
-        padding: 0.5rem;
+    .route-map-section {
+        height: 300px;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Stack */
+@media (max-width: 62.188em) {
+    .grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+@media (max-width: 64em) {
+    .detail-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* --- Responsive Breakpoints (Using em) --- */
+@media (max-width: 48em) {
+    .table-container {
+        max-height: 30rem;
+    }
+
+    .map-wrapper {
+        height: 22rem;
+    }
+
+    .stats-grid {
+        flex-direction: column;
+    }
+
+    table td,
+    table th {
+        font-size: 0.85em;
+        padding: 0.5em;
+    }
+}
+
+@media (max-width: 30em) {
+    .table-container {
+        border-radius: 0;
+        margin-left: -1em;
+        margin-right: -1em;
     }
 }

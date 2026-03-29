@@ -18,7 +18,7 @@ class Config:
 class DevelopmentConfig(Config):
     DEBUG = True
     # Creates local_dev.db inside the flask_app folder
-    sqlite_path = BASE_DIR / "local_dev.db"
+    sqlite_path = BASE_DIR.parent / "local_dev.db"
     SQLALCHEMY_DATABASE_URI = f"sqlite:///{sqlite_path}"
 
 class ProductionConfig(Config):

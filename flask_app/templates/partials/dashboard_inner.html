@@ -1,0 +1,85 @@
+<div id="stats-container" hx-swap-oob="true">
+    <div class="stats-grid">
+        <article class="stat-card info">
+            <small>Total Visualizados</small>
+            <h2>{{ vehicles|length }}</h2>
+        </article>
+        <article class="stat-card moving">
+            <small>En Movimiento</small>
+            <h2 style="color: var(--success);">{{ vehicles|selectattr('is_moving', 'equalto', True)|list|length }}</h2>
+        </article>
+        <article class="stat-card stopped">
+            <small>Detenidos</small>
+            <h2 style="color: var(--info);">{{ vehicles|selectattr('is_moving', 'equalto', True) and
+                (vehicles|selectattr('engine_state', 'equalto', True)) |list|length }}</h2>
+        </article>
+        <article class="stat-card engine-off">
+            <small>Motor<br>apagado</small>
+            <h2 style="color: var(--error);">{{ vehicles|selectattr('is_moving', 'equalto', False) and
+                (vehicles|selectattr('engine_state', 'equalto', False)) |list|length }}</h2>
+        </article>
+    </div>
+</div>
+
+<div class="table-container">
+    <table role="grid">
+        <thead>
+            <tr>
+                <th>Vehículo</th>
+                <th>Estado Flota</th>
+                <th>Actividad</th>
+                <th>Velocidad</th>
+                <th>Distancia</th>
+                <th>Actualizado</th>
+                <th>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in vehicles %}
+            <tr class="{{ 'row-moving' if t.is_moving else 'row-stopped' }}">
+                <td>
+                    <div class="vehicle-marker-data" data-id="{{ t.id }}" data-lat="{{ t.last_lat or 0 }}"
+                        data-lon="{{ t.last_lon or 0 }}" data-label="{{ t.parent_vehicle.vehicle_id }}"
+                        data-moving="{{ t.is_moving }}" data-speed="{{ t.speed }}">
+                    </div>
+                    <strong>{{ t.parent_vehicle.vehicle_id }}</strong>
+                </td>
+                <td>
+                    {% set s = t.parent_vehicle.vehicle_state %}
+                    <span
+                        class="badge {% if s.name == 'ACTIVO' %}badge-success{% elif s.name == 'MANTENIMIENTO' %}badge-idle{% elif s.name == 'INACTIVO' %}badge-off{% else %}badge-error{% endif %}"
+                        style="font-size: 0.75em;">
+                        {{ s.value | capitalize }}
+                    </span>
+                </td>
+                <td>
+                    <span
+                        class="badge {% if t.is_moving %}badge-success{% elif not t.is_moving and t.engine_state %}badge-not-moving{% elif not t.is_moving and not t.engine_state %}badge-error{% endif %}">
+                        {% if t.is_moving %}Movimiento{% elif not t.is_moving and t.engine_state %}Detenido{% elif
+                        not t.is_moving and not t.engine_state %}Motor apagado{% endif %}
+                    </span>
+                </td>
+                <td class="{{ 'high-speed' if t.speed > 100 }}">
+                    {{ t.speed }} <small>km/h</small>
+                </td>
+                <td>{{ "%.2f"|format(t.accumulated_distance) }} <small>km</small></td>
+                <td>{{ t.last_update | local_time }}</td>
+                <td>
+                    <a href="{{ url_for('detalle_vehiculo', patente=t.parent_vehicle.vehicle_id) }}"
+                        class="styled-button" role="button"
+                        style="padding: 0.2em 0.8em; font-size: 0.85em; text-decoration: none;">
+                        Detalles
+                    </a>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 3em;">
+                    <strong>No se encontraron vehículos.</strong><br>
+                    <small>Prueba ajustando los filtros de estado o búsqueda.</small>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,48 @@
+<form hx-post="{{ url_for('edit_vehicle', patente=vehicle.vehicle_id) }}" hx-target="#vehicle-status-card"
+    hx-swap="innerHTML">
+
+    {{ edit_form.csrf_token }}
+
+    <label>Conductor Asignado</label>
+    {{ edit_form.driver_id(id="driver-selector", onchange="toggleNewDriverFields()") }}
+    {% if edit_form.driver_id.errors %}
+    <small style="color: var(--error);">{{ edit_form.driver_id.errors[0] }}</small>
+    {% endif %}
+
+    <div id="new-driver-group"
+        style="display: {% if edit_form.driver_id.data == 'NEW' %}block{% else %}none{% endif %}; margin-top: 1rem; border-left: 3px solid var(--primary); padding-left: 1rem;">
+
+        <label for="new_driver_name">
+            Nombre Completo (Opcional)
+            {{ edit_form.new_driver_name(placeholder="Ej: Juan Pérez") }}
+            {% if edit_form.new_driver_name.errors %}
+            <small style="color: var(--error); display: block;">{{ edit_form.new_driver_name.errors[0] }}</small>
+            {% endif %}
+        </label>
+
+        <div class="grid">
+            <label for="new_driver_email">
+                Email (Opcional)
+                {{ edit_form.new_driver_email(placeholder="email@ejemplo.com", type="email") }}
+                {% if edit_form.new_driver_email.errors %}
+                <small style="color: var(--error); display: block;">{{ edit_form.new_driver_email.errors[0] }}</small>
+                {% endif %}
+            </label>
+
+            <label for="new_driver_phone">
+                Teléfono (Opcional)
+                {{ edit_form.new_driver_phone(placeholder="+56 9 ...") }}
+                {% if edit_form.new_driver_phone.errors %}
+                <small style="color: var(--error); display: block;">{{ edit_form.new_driver_phone.errors[0] }}</small>
+                {% endif %}
+            </label>
+        </div>
+    </div>
+    <hr>
+    <label>Estado Operativo</label>
+    {{ edit_form.vehicle_state() }}
+
+    <footer style="margin-top: 2rem;">
+        <button type="submit" class="styled-button" style="width: 100%;">Guardar Cambios</button>
+    </footer>
+</form>
