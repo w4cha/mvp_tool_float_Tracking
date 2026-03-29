@@ -70,6 +70,5 @@ services:
 databases:
   - name: fleet-db-instance
     databaseName: fleet_db
-    user: fleet_user
-    plan: starter         
+    user: fleet_user       
     postgresMajorVersion: 18
