@@ -10,7 +10,7 @@
         </article>
         <article class="stat-card stopped">
             <small>Detenidos</small>
-            <h2 style="color: var(--info);">{{ vehicles|selectattr('is_moving', 'equalto', True) and
+            <h2 style="color: var(--info);">{{ vehicles|selectattr('is_moving', 'equalto', False) and
                 (vehicles|selectattr('engine_state', 'equalto', True)) |list|length }}</h2>
         </article>
         <article class="stat-card engine-off">
