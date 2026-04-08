@@ -65,7 +65,7 @@
                 <td>{{ "%.2f"|format(t.accumulated_distance) }} <small>km</small></td>
                 <td>{{ t.last_update | local_time }}</td>
                 <td>
-                    <a href="{{ url_for('detalle_vehiculo', patente=t.parent_vehicle.vehicle_id) }}"
+                    <a href="{{ url_for('fleet.detalle_vehiculo', patente=t.parent_vehicle.vehicle_id) }}"
                         class="styled-button" role="button"
                         style="padding: 0.2em 0.8em; font-size: 0.85em; text-decoration: none;">
                         Detalles

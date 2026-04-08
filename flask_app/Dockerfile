@@ -7,5 +7,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY flask_app/ .
 COPY models.py .
 ENV PYTHONPATH="/app"
+ENV FLASK_APP="flask_app/app.py:create_app()"
 RUN chmod +x entrypoint.sh
 ENTRYPOINT ["./entrypoint.sh"]

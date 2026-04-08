@@ -44,7 +44,7 @@
         <div class="grid">
             <article>
                 <header>Nueva Anotación</header>
-                <form hx-post="{{ url_for('detalle_vehiculo', patente=vehicle.vehicle_id) }}"
+                <form hx-post="{{ url_for('fleet.detalle_vehiculo', patente=vehicle.vehicle_id) }}"
                     hx-target="#notes-list-container" hx-on::after-request="if(event.detail.successful) this.reset();">
                     {{ form.csrf_token }}
                     <label>Asunto</label>
@@ -81,24 +81,22 @@
 
 <script>
     // --- GLOBAL DATA ---
-    window.currentGraphs = {{ graphs | tojson | safe if graphs else '{}' }};
     window.allRoutes = {{ routes | tojson | safe if routes else '[]' }};
     window.rMap = null;
     window.polylineLayer = null;
     window.startMarker = null;
     window.endMarker = null;
     window.activeRouteIndex = 0;
-    window.renderActivePlot = function renderActivePlot(selected) {
-        const chartDiv = document.getElementById('active-chart');
-        if (!chartDiv || !window.currentGraphs[selected]) return;
-        let plotData = window.currentGraphs[selected];
-        if (typeof plotData === 'string') plotData = JSON.parse(plotData);
-        Plotly.react(chartDiv, plotData.data, plotData.layout, { responsive: true, displayModeBar: false, locale: 'es' });
+    // This handles the initial "Max Speed" graph on page load
+    const initialData = {{ graph_data | safe if graph_data else 'null' }};
 
-        document.querySelectorAll('.info-text').forEach(t => t.style.display = 'none');
-        const infoEl = document.getElementById('info-' + selected);
-        if (infoEl) infoEl.style.display = 'block';
-    }
+    requestAnimationFrame(() => {
+        const chartDiv = document.getElementById('active-chart');
+        if (chartDiv && initialData) {
+            const plotData = (typeof initialData === 'string') ? JSON.parse(initialData) : initialData;
+            Plotly.newPlot(chartDiv, plotData.data, plotData.layout, { responsive: true });
+        }
+    });
 
     function initRouteMap() {
         const container = document.getElementById('route-map');

@@ -1,33 +1,4 @@
-<header class="stats-header-inline">
-    <div class="grid">
-        <div>
-            <label for="graph-selector">Tipo de Gráfico</label>
-            <select id="graph-selector" name="graph-type"
-                hx-get="{{ url_for('update_stats', patente=vehicle.vehicle_id) }}" hx-target="#stats-interface-wrapper"
-                hx-include="#period-select">
-                <option value="max_speed">Velocidad Máxima</option>
-                <option value="distance">Uso Promedio</option>
-                <option value="idle">Alertas de Inactividad</option>
-                <option value="trayectos" selected>Ultimos trayectos</option>
-            </select>
-        </div>
-        <div>
-            <label for="period-select">Periodo</label>
-            <select id="period-select" name="period-select"
-                hx-get="{{ url_for('update_stats', patente=vehicle.vehicle_id) }}" hx-target="#stats-interface-wrapper"
-                hx-include="#graph-selector">
-                {% if data_age_hours > 0 %}<option value="6h" {% if period=='6h' %}selected{% endif %}>Últimas 6 horas
-                </option>{% endif %}
-                {% if data_age_hours >= 24 %}<option value="24h" {% if period=='24h' %}selected{% endif %}>Últimas 24
-                    Horas</option>{% endif %}
-                {% if data_age_hours >= 168 %}<option value="7d" {% if period=='7d' %}selected{% endif %}>Últimos 7 Días
-                </option>{% endif %}
-                {% if data_age_hours >= 720 %}<option value="30d" {% if period=='30d' %}selected{% endif %}>Últimos 30
-                    Días</option>{% endif %}
-            </select>
-        </div>
-    </div>
-</header>
+{% include "partials/stats_select.html" %}
 
 <div id="routes-view" style="margin-top: 1rem;">
     {% if routes %}
@@ -37,13 +8,13 @@
 
         <div class="route-list-section">
             <div class="route-table-wrapper"
-                style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px;">
+                style="max-height: 300px; overflow-y: auto; border: 1px solid var(--muted-border-color); border-radius: 8px;">
                 <table class="striped" style="margin: 0;">
-                    <thead style="position: sticky; top: 0; background: var(--background-color); z-index: 10;">
+                    <thead style="position: sticky; top: 0; background: var(--surface-bg); z-index: 10;">
                         <tr>
                             <th>Día</th>
                             <th>Inicio</th>
-                            <th>Termino</th>
+                            <th>Término</th>
                         </tr>
                     </thead>
                     <tbody id="route-items">
@@ -59,17 +30,20 @@
                     </tbody>
                 </table>
             </div>
+
             <button class="styled-button" onclick="openRouteModal()" style="margin-top: 1rem; width: 100%;">
                 Ver Detalles del Trayecto
             </button>
+
             <dialog id="route-stats-modal">
-                <article style="max-width: 550px;">
+                <article style="width: 50%;">
                     <header>
                         <a href="#close" class="close"
                             onclick="document.getElementById('route-stats-modal').close()"></a>
                         Detalles del Trayecto
                     </header>
-                    <div id="route-modal-body"></div>
+                    <div id="route-modal-body">
+                    </div>
                 </article>
             </dialog>
         </div>
@@ -82,44 +56,50 @@
 </div>
 
 <script>
-
-    // Update data first
+    // Update the global data used by map logic in detalle.html
     window.allRoutes = {{ routes | tojson | safe if routes else '[]' }};
+    (function () {
+        // Ensure Leaflet initializes after HTMX has swapped the DOM
+        requestAnimationFrame(() => {
+            const mapDiv = document.getElementById('route-map');
+            if (mapDiv && typeof initRouteMap === 'function') {
+                // If there are routes, the function in detalle.html will pick up window.allRoutes
+                initRouteMap();
+            }
+        });
+    })();
 
-    // More reliable than setTimeout: Wait for the next browser paint
-    requestAnimationFrame(() => {
-        const mapDiv = document.getElementById('route-map');
-        if (mapDiv && typeof initRouteMap === 'function') {
-            initRouteMap();
-        }
-    });
-
+    // Modal logic specific to the Trayectos view
     function openRouteModal() {
-        pop_up = document.getElementById("route-stats-modal");
+        const pop_up = document.getElementById("route-stats-modal");
+        if (!pop_up) return;
+
         if (pop_up.open) {
             pop_up.close();
         } else {
-            const data = window.allRoutes[activeRouteIndex];
+            // activeRouteIndex is tracked globally in detalle.html
+            const data = window.allRoutes[window.activeRouteIndex || 0];
             const modalBody = document.getElementById('route-modal-body');
-            const modal = document.getElementById("route-stats-modal");
 
-            if (!data) return;
+            if (!data || !modalBody) return;
+            let duration_travel = Number.parseFloat(data.duration);
+            duration_travel = !Number.isNaN(duration_travel) ? duration_travel : "duración no disponible"
 
-            // Build the HTML using the data already in window.allRoutes
+            let duration_warning = (typeof duration_travel === "number" && duration_travel < 60 * 5) ? duration_travel : `<span style="color: var(--error);">${duration_travel}</span>`
             modalBody.innerHTML = `
-        <div class="grid">
-            <div>
-                <strong>Distancia:</strong> ${data.dist} km<br>
-                <strong>Duración:</strong> ${data.duration} min<br>
-                <strong>Minutos sin movimiento:</strong> ${data.idle} min
-            </div>
-            <div>
-                <strong>Vel. Máxima:</strong> ${data.max_speed} km/h<br>
-                <strong>Vel. Promedio:</strong> ${data.avg_speed} km/h<br>
-            </div>
-        </div>
-        <hr>
-    `;
+                <div class="grid">
+                    <div>
+                        <strong>Distancia:</strong> ${data.dist} km<br>
+                        <strong>Duración:</strong> ${duration_warning} min<br>
+                        <strong>Ralentí en ruta:</strong> ${data.idle} min
+                    </div>
+                    <div>
+                        <strong>Vel. Máxima:</strong> ${data.max_speed} km/h<br>
+                        <strong>Vel. Promedio:</strong> ${data.avg_speed} km/h<br>
+                    </div>
+                </div>
+                <hr>
+            `;
             pop_up.showModal();
         }
     }

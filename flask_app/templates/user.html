@@ -50,7 +50,7 @@
                         <small>Cambiar contraseña actual</small>
                     </header>
 
-                    <form action="{{ url_for('change_password') }}" method="POST">
+                    <form action="{{ url_for('admin.change_password') }}" method="POST">
                         {{ password_form.csrf_token }}
 
                         <label for="new_password">{{ password_form.new_password.label }}</label>
@@ -128,7 +128,7 @@
                             </strong>
                         </small>
                     </div>
-                    <form action="{{ url_for('toggle_worker') }}" method="POST" style="margin: 0;">
+                    <form action="{{ url_for('admin.toggle_worker') }}" method="POST" style="margin: 0;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="styled-button"
                             style="background-color: {{ 'var(--error)' if worker_status else 'var(--success)' }};">
@@ -138,13 +138,43 @@
                 </div>
             </article>
 
+            <article class="stat-card" style="border-top: 3px solid var(--tag-delay); margin-top: 2rem;">
+                <header style="display: flex; justify-content: space-around; align-items: center; margin-bottom: 1rem;">
+                    <hgroup>
+                        <h5 style="margin: 0;">Gestión de Invitaciones</h5>
+                        <small>Genera enlaces de registro de un solo uso (validez 48h)</small>
+                    </hgroup>
+                    <button class="styled-button" hx-post="{{ url_for('admin.generate_invite') }}"
+                        hx-target="#token-table-body" hx-vals='{"csrf_token": "{{ csrf_token() }}"}' hx-swap="innerHTML"
+                        style="background-color: var(--tag-delay); max-width: 11em;">
+                        + Generar Nueva Invitación
+                    </button>
+                </header>
+
+                <div class="table-container" style="max-height: 250px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Enlace de Registro</th>
+                                <th>Creado</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="token-table-body">
+                            {% include "partials/token_rows.html" %}
+                        </tbody>
+                    </table>
+                </div>
+            </article>
+
             <div class="table-container">
                 <header
                     style="padding: 1rem; background: var(--surface-bg); border-bottom: 1px solid var(--muted-border-color);">
                     <div style="margin: 0; display: flex; gap: 1rem;">
                         <input type="text" name="q" placeholder="Escribe para buscar usuario..."
                             style="margin: 0; flex-grow: 1;"
-                            hx-get="{{ url_for('user', username=current_user.user_name) }}"
+                            hx-get="{{ url_for('admin.user_profile', username=current_user.user_name) }}"
                             hx-trigger="keyup changed delay:300ms, search" hx-target="#user-table-body"
                             hx-indicator=".htmx-indicator">
                     </div>

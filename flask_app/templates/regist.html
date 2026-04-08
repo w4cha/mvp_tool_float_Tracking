@@ -9,7 +9,7 @@
             <small style="color: var(--text-muted);">Únete al sistema de gestión</small>
         </header>
 
-        <form method="POST" action="">
+        <form method="POST" action="{{ url_for('auth.regist', token=token) }}">
             {{ form.hidden_tag() }}
 
             <label for="username">Nombre Completo</label>
@@ -97,7 +97,7 @@
         </form>
 
         <footer>
-            <small>¿Ya tienes cuenta? <a href="{{ url_for('login') }}">Inicia sesión aquí</a></small>
+            <small>¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión aquí</a></small>
         </footer>
     </article>
 </div>

@@ -1,67 +1,26 @@
-<header class="stats-header-inline">
-    <div class="grid">
-        <div>
-            <label for="graph-selector">Tipo de Gráfico</label>
-            <select id="graph-selector" name="graph-type"
-                hx-get="{{ url_for('update_stats', patente=vehicle.vehicle_id) }}" hx-target="#stats-interface-wrapper"
-                hx-include="#period-select">
-                <option value="max_speed" {% if active_type=='max_speed' or not active_type %}selected{% endif %}>
-                    Velocidad Máxima</option>
-                <option value="distance" {% if active_type=='distance' %}selected{% endif %}>Uso Promedio</option>
-                <option value="idle" {% if active_type=='idle' %}selected{% endif %}>Alertas de Inactividad</option>
-                <option value="trayectos">Ultimos trayectos</option>
-            </select>
-        </div>
-        <div>
-            <label for="period-select">Periodo</label>
-            <select id="period-select" name="period-select"
-                hx-get="{{ url_for('update_stats', patente=vehicle.vehicle_id) }}" hx-target="#stats-interface-wrapper"
-                hx-include="#graph-selector">
-                {% if data_age_hours > 0 %}<option value="1h" {% if period=='1h' %}selected{% endif %}>Última Hora
-                </option>{% endif %}
-                {% if data_age_hours >= 24 %}<option value="24h" {% if period=='24h' %}selected{% endif %}>Últimas 24
-                    Horas</option>{% endif %}
-                {% if data_age_hours >= 168 %}<option value="7d" {% if period=='7d' %}selected{% endif %}>Últimos 7 Días
-                </option>{% endif %}
-                {% if data_age_hours >= 720 %}<option value="30d" {% if period=='30d' %}selected{% endif %}>Últimos 30
-                    Días</option>{% endif %}
-            </select>
-        </div>
-    </div>
-</header>
+{% include "partials/stats_select.html" %}
 
 <div id="graph-view" style="margin-top: 1rem;">
     <div id="active-chart" class="chart-container" style="min-height: 450px; width: 100%;"></div>
-    <div style="margin-top: 1rem; text-align: right;">
-        <button class="secondary outline" onclick="toggleInfo()">¿Qué significa este gráfico?</button>
-    </div>
-    <article id="graph-info-box" style="display: none; margin-top: 1rem;">
-        <div id="info-max_speed" class="info-text">
-            <h5>Velocidad Máxima</h5>
-            <p>Muestra los picos de velocidad alcanzados. Ayuda a identificar excesos de velocidad en ruta.</p>
-        </div>
-        <div id="info-distance" class="info-text" style="display: none;">
-            <h5>Uso Acumulado</h5>
-            <p>Kilometraje acumulado en el periodo designado.</p>
-        </div>
-        <div id="info-idle" class="info-text" style="display: none;">
-            <h5>Alertas de Inactividad</h5>
-            <p>Tiempo acumulado en el periodo de tiempos de inactividad (motor encendido sin desplazamiento).</p>
-        </div>
-    </article>
 </div>
 
 <script>
-    // Trigger the global function defined in detalle.html
-    // 1. Force update the global data with what just came from the server
-    window.currentGraphs = {{ graphs | tojson | safe if graphs else '{}' }};
+    (function () {
+        // Use the variable name 'graph_data' from Python
+        const rawData = {{ graph_data | safe if graph_data else 'null'
+    }};
 
-    // 2. Use requestAnimationFrame to ensure the 'active-chart' div 
-    // is rendered in the DOM before Plotly tries to grab it
     requestAnimationFrame(() => {
-        const selector = document.getElementById('graph-selector');
-        if (selector && typeof window.renderActivePlot === 'function') {
-            window.renderActivePlot(selector.value);
+        const chartDiv = document.getElementById('active-chart');
+        if (chartDiv && rawData) {
+            // If it's a JSON string from Python's json.dumps, parse it
+            const plotData = (typeof rawData === 'string') ? JSON.parse(rawData) : rawData;
+
+            Plotly.newPlot(chartDiv, plotData.data, plotData.layout, {
+                responsive: true,
+                displaylogo: false,
+            });
         }
     });
+    }) ();
 </script>

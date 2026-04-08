@@ -1,12 +1,13 @@
 import enum
 import re
 import os
+import secrets
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import JSON, event, ForeignKey, MetaData, func, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, relationship, validates
 from flask_login import UserMixin
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # 1. Naming Conventions
 convention = {
@@ -226,6 +227,52 @@ class VehicleRoute(db.Model, TimestampMixin):
 
     def __repr__(self):
         return f'<Route {self.vehicle_id}: {self.start_time} to {self.end_time}>'
+
+class RegistrationToken(db.Model, TimestampMixin):
+    """
+    Gatekeeper for new user registrations.
+    Tokens are unique strings sent to invited users.
+    """
+    __tablename__ = "tokens_registro"
+    
+    id = db.Column(db.Integer, primary_key=True)
+    # The actual random string (e.g., a8f3b2...)
+    token = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    # Becomes True once a user successfully registers with it
+    is_used = db.Column(db.Boolean, default=False, nullable=False)
+    # Security: Tokens shouldn't last forever
+    expires_at = db.Column(db.DateTime(timezone=True), nullable=False)
+    
+    # created_at and updated_at are provided by TimestampMixin
+
+    @property
+    def is_expired(self):
+        """Returns True if the current time is past the expiry date"""
+        # Aseguramos que la comparación sea entre dos objetos con zona horaria (UTC)
+        now = datetime.now(timezone.utc)
+        
+        # Si expires_at es naive (cosa rara con timezone=True pero posible en SQLite),
+        # le forzamos UTC para la comparación.
+        expires = self.expires_at
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+            
+        return now > expires
+
+    @staticmethod
+    def generate(hours_valid=48):
+        """
+        Creates and returns a new RegistrationToken instance.
+        Note: You must db.session.add() and commit() where you call this.
+        """
+        return RegistrationToken(
+            token=secrets.token_hex(24),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=hours_valid)
+        )
+
+    def __repr__(self):
+        status = "USED" if self.is_used else ("EXPIRED" if self.is_expired else "ACTIVE")
+        return f"<Token {self.token[:8]}... [{status}]>"
 
 class SystemConfig(db.Model):
     __tablename__ = "shared_state"

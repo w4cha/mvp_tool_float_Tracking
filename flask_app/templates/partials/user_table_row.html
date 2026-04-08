@@ -9,7 +9,7 @@
         </span>
     </td>
     <td>
-        <form action="{{ url_for('delete_user') }}" method="POST" style="margin: 0;">
+        <form action="{{ url_for('admin.delete_user') }}" method="POST" style="margin: 0;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="user_id" value="{{ u.user_id }}">
             <button type="submit" class="outline {{ 'secondary' if u.active_user else 'primary' }}"

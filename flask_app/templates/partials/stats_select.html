@@ -1,0 +1,88 @@
+<header class="stats-header-inline">
+    <div class="grid">
+        <div>
+            <label for="graph-selector">Tipo de Visualización</label>
+            <select id="graph-selector" name="graph-type"
+                hx-get="{{ url_for('fleet.update_stats', patente=vehicle.vehicle_id) }}"
+                hx-target="#stats-interface-wrapper" hx-include="#period-select, #start_date, #end_date">
+                <option value="max_speed" {% if active_type=='max_speed' %}selected{% endif %}>Velocidad Máxima</option>
+                <option value="distance" {% if active_type=='distance' %}selected{% endif %}>Uso Promedio</option>
+                <option value="idle" {% if active_type=='idle' %}selected{% endif %}>Alertas de Inactividad</option>
+                <option value="trayectos" {% if active_type=='trayectos' %}selected{% endif %}>Últimos trayectos
+                </option>
+            </select>
+        </div>
+
+        <div>
+            <label for="period-select">Accesos Rápidos</label>
+            <select id="period-select" name="period-select" onchange="updateCalendarFromPeriod(this.value)">
+                {% if active_type != 'trayectos' %}
+                <option value="1h" {% if period=='1h' %}selected{% endif %}>Última Hora</option>
+                {% endif %}
+
+                <option value="6h" {% if period=='6h' %}selected{% endif %}>Últimas 6 Horas</option>
+                <option value="24h" {% if period=='24h' %}selected{% endif %}>Últimas 24 Horas</option>
+
+                {% if data_age_hours >= 168 %}
+                <option value="7d" {% if period=='7d' %}selected{% endif %}>Últimos 7 Días</option>
+                {% endif %}
+
+                {% if data_age_hours >= 720 %}
+                <option value="30d" {% if period=='30d' %}selected{% endif %}>Últimos 30 Días</option>
+                {% endif %}
+                <option value="custom" {% if period=='custom' %}selected{% endif %}>Personalizado...</option>
+            </select>
+        </div>
+
+        <div id="custom-dates-container">
+            <div class="grid">
+                <div>
+                    <label for="start_date">Desde</label>
+                    <input type="datetime-local" id="start_date" name="start_date" value="{{ start_date_val }}"
+                        hx-get="{{ url_for('fleet.update_stats', patente=vehicle.vehicle_id) }}" hx-trigger="change"
+                        hx-target="#stats-interface-wrapper" hx-include="#graph-selector, #period-select, #end_date"
+                        hx-vals='{"period-select": "custom"}'>
+                </div>
+                <div>
+                    <label for="end_date">Hasta</label>
+                    <input type="datetime-local" id="end_date" name="end_date" value="{{ end_date_val }}"
+                        hx-get="{{ url_for('fleet.update_stats', patente=vehicle.vehicle_id) }}" hx-trigger="change"
+                        hx-target="#stats-interface-wrapper" hx-include="#graph-selector, #period-select, #start_date"
+                        hx-vals='{"period-select": "custom"}'>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% if custom_date_error %}
+    <small>{{ custom_date_error | safe }}</small>
+    {% endif %}
+</header>
+
+<script>
+    function updateCalendarFromPeriod(period) {
+        if (period === 'custom') return;
+
+        const now = new Date();
+        let start = new Date();
+
+        if (period === '1h') start.setHours(now.getHours() - 1);
+        else if (period === '6h') start.setHours(now.getHours() - 6);
+        else if (period === '24h') start.setHours(now.getHours() - 24);
+        else if (period === '7d') start.setDate(now.getDate() - 7);
+        else if (period === '30d') start.setDate(now.getDate() - 30);
+
+        // This helper function creates a YYYY-MM-DDTHH:mm string 
+        // based on the local time of the device (Chile), 
+        // which is what datetime-local expects.
+        const toLocalISO = (date) => {
+            const pad = (n) => n.toString().padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+        };
+
+        document.getElementById('start_date').value = toLocalISO(start);
+        document.getElementById('end_date').value = toLocalISO(now);
+
+        // Trigger HTMX update
+        htmx.trigger('#start_date', 'change');
+    }
+</script>

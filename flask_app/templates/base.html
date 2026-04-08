@@ -30,17 +30,17 @@
             </li>
 
             {% if current_user.is_authenticated %}
-            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-            <li><a href="{{ url_for('user', username=current_user.user_name) }}">Profile</a></li>
+            <li><a href="{{ url_for('fleet.dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('admin.user_profile', username=current_user.user_name) }}">Profile</a></li>
             <li>
-                <button class="styled-button" hx-post="{{ url_for('logout') }}"
+                <button class="styled-button" hx-post="{{ url_for('auth.logout') }}"
                     hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}' style="cursor: pointer;">
                     Logout
                 </button>
             </li>
             {% else %}
-            <li><a href="{{ url_for('login') }}">Login</a></li>
-            <li><a href="{{ url_for('regist') }}">Register</a></li>
+            <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+            <li><a href="{{ url_for('auth.regist') }}">Register</a></li>
             {% endif %}
         </ul>
     </nav>

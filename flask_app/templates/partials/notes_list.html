@@ -2,8 +2,8 @@
     <div class="note-filter-wrapper">
         <label for="subject-filter"><small>Filtrar:</small></label>
         <select id="subject-filter" name="subject_filter"
-            hx-get="{{ url_for('detalle_vehiculo', patente=vehicle.vehicle_id) }}" hx-target="#notes-list-container"
-            hx-trigger="change">
+            hx-get="{{ url_for('fleet.detalle_vehiculo', patente=vehicle.vehicle_id) }}"
+            hx-target="#notes-list-container" hx-trigger="change">
             <option value="ALL">Todos los asuntos</option>
             {% for sub in subjects %}
             <option value="{{ sub.name }}" {% if selected_filter==sub.name %}selected{% endif %}>

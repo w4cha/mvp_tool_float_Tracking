@@ -1,7 +1,11 @@
 #!/bin/bash
 set -e
 
-# 1. Run initialization (file is in the current directory now)
+# 1. Applying db migrations
+echo "--- [PROCESO] Aplicando migraciones (Alembic) ---"
+python -m flask db upgrade
+
+# 2. Run initialization (file is in the current directory now)
 echo "Running database initialization..."
 python init_db.py
 

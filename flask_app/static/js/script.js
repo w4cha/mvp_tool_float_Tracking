@@ -69,3 +69,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 4000);
     });
 });
+
+function setReloadFrenquency(value) {
+    let interval = Number.parseInt(value)
+    let target = document.getElementById("table-container-wrapper")
+    let val = !Number.isNaN(interval) && (interval >= 10 && interval < 3600) ? `load, every ${interval}s` : "click[false]"
+    target.setAttribute("hx-trigger", val)
+    htmx.process(target);
+}

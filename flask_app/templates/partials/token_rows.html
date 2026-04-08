@@ -1,0 +1,52 @@
+{% for t in tokens %}
+<tr id="token-row-{{ t.id }}">
+    <td>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <input type="text" readonly value="{{ url_for('auth.regist', token=t.token, _external=True) }}"
+                id="input-{{ t.id }}" style="margin: 0; font-size: 0.8rem; padding: 0.2rem;">
+            <button class="styled-button" onclick="copyToClipboard('input-{{ t.id }}')"
+                style="padding: 0.2rem 0.5rem; font-size: 0.7rem; background: var(--tag-other);">
+                Copiar
+            </button>
+        </div>
+    </td>
+    <td><small>{{ t.created_at.strftime('%d/%m %H:%M') }}</small></td>
+    <td>
+        {% if t.is_expired %}
+        <span class="badge badge-error">EXPIRADO</span>
+        {% else %}
+        <span class="badge badge-success">ACTIVO</span>
+        {% endif %}
+    </td>
+    <td>
+        <button class="styled-button" hx-delete="{{ url_for('admin.delete_token', token_id=t.id) }}"
+            hx-target="#token-row-{{ t.id }}" hx-vals='{"csrf_token": "{{ csrf_token() }}"}' hx-swap="outerHTML"
+            style="background: transparent; color: var(--error) !important; padding: 0; border: none;">
+            Eliminar
+        </button>
+    </td>
+</tr>
+{% else %}
+<tr>
+    <td colspan="4" style="text-align: center; color: var(--text-muted);">No hay invitaciones activas</td>
+</tr>
+{% endfor %}
+
+<script>
+    function copyToClipboard(id) {
+        var copyText = document.getElementById(id);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(copyText.value);
+
+        // Simple visual feedback
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "¡Copiado!";
+        btn.style.background = "var(--success)";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = "var(--tag-other)";
+        }, 2000);
+    }
+</script>
